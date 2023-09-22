@@ -14,11 +14,22 @@ Window::Window(QApplication *parent) :
   progress->hide();
   statusBar()->addPermanentWidget(progress);
 
-  viewer = new Viewer(this);
+  inst.setLayers({ "VK_LAYER_KHRONOS_validation" });
+  if (!inst.create())
+      qFatal("Failed to create Vulkan instance: %d", inst.errorCode());
+
+  w = new VulkanWindow();
+  w->setVulkanInstance(&inst);
+ 
+  QWidget* wrapper = QWidget::createWindowContainer(w);
+
+  setCentralWidget(wrapper);
+
+ /* viewer = new Viewer(this);
   connect(viewer, &Viewer::startComputation, this, &Window::startComputation);
   connect(viewer, &Viewer::midComputation, this, &Window::midComputation);
   connect(viewer, &Viewer::endComputation, this, &Window::endComputation);
-  setCentralWidget(viewer);
+  setCentralWidget(viewer);*/
 
   auto openAction = new QAction(tr("&Open"), this);
   openAction->setShortcut(tr("Ctrl+O"));
@@ -56,6 +67,8 @@ Window::Window(QApplication *parent) :
   visMenu->addAction(cutoffAction);
   visMenu->addAction(rangeAction);
   visMenu->addAction(slicingAction);
+
+  this->resize(1280, 720);
 }
 
 void Window::open(bool clear_others) {

@@ -1,7 +1,8 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
-
+#include <qvulkaninstance.h>
+#include "vulkanwindow.hh"
 #include "viewer.hh"
 
 class QApplication;
@@ -25,6 +26,8 @@ private slots:
 private:
   QApplication *parent;
   Viewer *viewer;
+  QVulkanInstance inst;
+  VulkanWindow *w;
   QProgressBar *progress;
   QString last_directory;
 };
