@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkanwindow.hh"
+#include "vulkan/vulkanwindow.hh"
 #include "testrenderer.hh"
 
 QVulkanWindowRenderer* VulkanWindow::createRenderer()

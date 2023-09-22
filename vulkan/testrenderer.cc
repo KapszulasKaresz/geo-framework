@@ -1,5 +1,5 @@
 #pragma once
-#include "testrenderer.hh"
+#include "vulkan/testrenderer.hh"
 
 TestRenderer::TestRenderer(QVulkanWindow* w) : m_window(w) {
 }

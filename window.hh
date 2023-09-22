@@ -2,7 +2,7 @@
 
 #include <QtWidgets/QMainWindow>
 #include <qvulkaninstance.h>
-#include "vulkanwindow.hh"
+#include "vulkan/vulkanwindow.hh"
 #include "viewer.hh"
 
 class QApplication;
