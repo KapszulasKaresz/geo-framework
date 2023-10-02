@@ -18,11 +18,15 @@ Window::Window(QApplication *parent) :
   if (!inst.create())
       qFatal("Failed to create Vulkan instance: %d", inst.errorCode());
 
-  w = new VulkanWindow();
-  w->setVulkanInstance(&inst);
+  viewer = new VulkanWindow();
+  viewer->setVulkanInstance(&inst);
  
-  QWidget* wrapper = QWidget::createWindowContainer(w);
+  wrapper = QWidget::createWindowContainer(viewer, this);
 
+
+  connect(viewer, &VulkanWindow::startComputation, this, &Window::startComputation);
+  connect(viewer, &VulkanWindow::midComputation, this, &Window::midComputation);
+  connect(viewer, &VulkanWindow::endComputation, this, &Window::endComputation);
   setCentralWidget(wrapper);
 
  /* viewer = new Viewer(this);
@@ -120,7 +124,7 @@ void Window::setCutoff() {
 
   if(dlg->exec() == QDialog::Accepted) {
     viewer->setCutoffRatio(sb->value());
-    viewer->update();
+    wrapper->update();
   }
 }
 
@@ -158,7 +162,7 @@ void Window::setRange() {
   if(dlg.exec() == QDialog::Accepted) {
     viewer->setMeanMin(sb1->value());
     viewer->setMeanMax(sb2->value());
-    viewer->update();
+    wrapper->update();
   }
 }
 
@@ -206,7 +210,7 @@ void Window::setSlicing() {
   if(dlg->exec() == QDialog::Accepted) {
     viewer->setSlicingDir(sb_v[0]->value(), sb_v[1]->value(), sb_v[2]->value());
     viewer->setSlicingScaling(sb_s->value());
-    viewer->update();
+    wrapper->update();
   }
 }
 

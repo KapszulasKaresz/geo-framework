@@ -25,9 +25,9 @@ private slots:
 
 private:
   QApplication *parent;
-  Viewer *viewer;
+  VulkanWindow *viewer;
   QVulkanInstance inst;
-  VulkanWindow *w;
+  QWidget* wrapper;
   QProgressBar *progress;
   QString last_directory;
 };
