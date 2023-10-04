@@ -33,5 +33,8 @@ signals:
     void endComputation();
 
 private: 
+    virtual void keyPressEvent(QKeyEvent* e) override;
+    virtual void mouseMoveEvent(QMouseEvent* e) override;
+
     Renderer* renderer;
 };

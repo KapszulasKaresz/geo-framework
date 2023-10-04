@@ -10,7 +10,7 @@ static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
 }
 
 
-Renderer::Renderer(QVulkanWindow* w) : m_window(w), lightPos(QVector3D(0.0f, 5.0f, 15.0f)), cam(QVector3D(0.0f, 0.0f, 10.0f)) {
+Renderer::Renderer(QVulkanWindow* w) : m_window(w), lightPos(QVector3D(0.0f, 50.0f, 150.0f)), cam(QVector3D(0.0f, 0.0f, 5.0f)) {
 }
 
 void Renderer::preInitResources() {
@@ -216,7 +216,7 @@ void Renderer::createObjectPipeline()
     VkPipelineRasterizationStateCreateInfo rs;
     memset(&rs, 0, sizeof(rs));
     rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs.polygonMode = VK_POLYGON_MODE_FILL;
+    rs.polygonMode = VK_POLYGON_MODE_LINE;
     rs.cullMode = VK_CULL_MODE_BACK_BIT;
     rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.lineWidth = 1.0f;
@@ -265,7 +265,7 @@ void Renderer::createObjectPipeline()
 void Renderer::initSwapChainResources() {
     m_proj = m_window->clipCorrectionMatrix();
     const QSize s = m_window->swapChainImageSize();
-    m_proj.perspective(45.0f, s.width() / s.height(), 0.01f, 1000.0f);
+    m_proj.perspective(45.0f, s.width() / (float)s.height(), 0.01f, 1000.0f);
     markViewProjDirty();
 } 
 void Renderer::releaseSwapChainResources() {
@@ -308,16 +308,314 @@ void Renderer::releaseResources() {
         m_devFuncs->vkDestroyShaderModule(dev, m_material.fs.data()->shaderModule, nullptr);
         m_material.fs.reset();
     }
+
+    //TODO FREE REMAINING RESOURCES!!!
+}
+
+void Renderer::ensureBuffers()
+{
+    if (m_objectVertexBuf || !hasObject) {
+        return;
+    }
+
+    VkDevice dev = m_window->device();
+    const int concurrentFrameCount = m_window->concurrentFrameCount();
+
+
+    VkBufferCreateInfo bufInfo;
+    memset(&bufInfo, 0, sizeof(bufInfo));
+    bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    const int meshByteCount = object->getVerticieCount() * 8 * sizeof(float);
+    bufInfo.size = meshByteCount;
+    bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    VkResult err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_objectVertexBuf);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to create vertex buffer: %d", err);
+
+    VkMemoryRequirements objectVertMemReq;
+    m_devFuncs->vkGetBufferMemoryRequirements(dev, m_objectVertexBuf, &objectVertMemReq);
+
+    bufInfo.size = (m_material.fragUniSize + m_material.vertUniSize) * concurrentFrameCount;
+    bufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_uniBuf);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to create uniform buffer: %d", err);
+
+    VkMemoryRequirements uniMemReq;
+    m_devFuncs->vkGetBufferMemoryRequirements(dev, m_uniBuf, &uniMemReq);
+
+    m_material.uniMemStartOffset = aligned(0 + objectVertMemReq.size, uniMemReq.alignment);
+    VkMemoryAllocateInfo memAllocInfo = {
+        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        nullptr,
+        m_material.uniMemStartOffset + uniMemReq.size,
+        m_window->hostVisibleMemoryIndex()
+    };
+    err = m_devFuncs->vkAllocateMemory(dev, &memAllocInfo, nullptr, &m_bufMem);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to allocate memory: %d", err);
+
+    err = m_devFuncs->vkBindBufferMemory(dev, m_objectVertexBuf, m_bufMem, 0);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to bind vertex buffer memory: %d", err);
+
+    err = m_devFuncs->vkBindBufferMemory(dev, m_uniBuf, m_bufMem, m_material.uniMemStartOffset);
+    if (err != VK_SUCCESS) 
+        qFatal("Failed to bind uniform buffer memory: %d", err);
+
+    //Vertex data upload
+    quint8* p;
+    err = m_devFuncs->vkMapMemory(dev, m_bufMem, 0, m_material.uniMemStartOffset, 0, reinterpret_cast<void**>(&p));
+    if (err != VK_SUCCESS)
+        qFatal("Failed to map memory: %d", err);
+
+    float* vertexData = object->getVertexData();
+    memcpy(p, vertexData, meshByteCount);
+    delete[] vertexData;
+
+    m_devFuncs->vkUnmapMemory(dev, m_bufMem);
+
+
+    //create discriptor sets for uniform buffers
+    VkDescriptorBufferInfo vertUni = { m_uniBuf, 0, m_material.vertUniSize };
+    VkDescriptorBufferInfo fragUni = { m_uniBuf, m_material.vertUniSize, m_material.fragUniSize };
+
+    VkWriteDescriptorSet descWrite[2]; 
+    memset(descWrite, 0, sizeof(descWrite));
+    descWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET; 
+    descWrite[0].dstSet = m_material.descSet; 
+    descWrite[0].dstBinding = 0; 
+    descWrite[0].descriptorCount = 1; 
+    descWrite[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC; 
+    descWrite[0].pBufferInfo = &vertUni; 
+
+    descWrite[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET; 
+    descWrite[1].dstSet = m_material.descSet; 
+    descWrite[1].dstBinding = 1; 
+    descWrite[1].descriptorCount = 1; 
+    descWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    descWrite[1].pBufferInfo = &fragUni;
+
+    m_devFuncs->vkUpdateDescriptorSets(dev, 2, descWrite, 0, nullptr);
+}
+
+void Renderer::ensureInstanceBuffer()
+{
+    if (m_inst || !hasObject) {
+        return;
+    }
+
+    m_inst = true;
+
+    VkDevice dev = m_window->device(); 
+
+    VkBufferCreateInfo bufInfo; 
+    memset(&bufInfo, 0, sizeof(bufInfo)); 
+    bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO; 
+    bufInfo.size = 6 * sizeof(float);
+    bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; 
+
+    VkResult err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_instBuf);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to create instance buffer: %d", err);
+
+    VkMemoryRequirements memReq; 
+    m_devFuncs->vkGetBufferMemoryRequirements(dev, m_instBuf, &memReq); 
+
+    VkMemoryAllocateInfo memAllocInfo = { 
+        VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, 
+        nullptr, 
+        memReq.size, 
+        m_window->hostVisibleMemoryIndex() 
+    };
+    err = m_devFuncs->vkAllocateMemory(dev, &memAllocInfo, nullptr, &m_instBufMem); 
+    if (err != VK_SUCCESS)
+        qFatal("Failed to allocate memory: %d", err);
+
+    err = m_devFuncs->vkBindBufferMemory(dev, m_instBuf, m_instBufMem, 0); 
+    if (err != VK_SUCCESS)
+        qFatal("Failed to bind instance buffer memory: %d", err);
+
+    float* p1 = new float[6];
+    float t[] = { 0, 0, 0 };
+    memcpy(p1, t, 12);
+    float d[] = { 0, 0, 0 };
+    memcpy(p1 + 12, d, 12); 
+
+    quint8* p;
+    err = m_devFuncs->vkMapMemory(dev, m_instBufMem, 0, 6 * sizeof(float), 0,
+        reinterpret_cast<void**>(&p));
+    if (err != VK_SUCCESS)
+        qFatal("Failed to map memory: %d", err);
+    memcpy(p, p,6);
+    m_devFuncs->vkUnmapMemory(dev, m_instBufMem);
+    delete[] p1;
+}
+
+void Renderer::getMatrices(QMatrix4x4* vp, QMatrix4x4* model, QMatrix3x3* modelNormal, QVector3D* eyePos)
+{
+    model->setToIdentity();
+    model->rotate(m_rotation, 1, 1, 0);
+    *modelNormal = model->normalMatrix();
+    QMatrix4x4 view = cam.viewMatrix();
+    *vp = m_proj * view;
+
+    *eyePos = view.inverted().column(3).toVector3D();
+}
+
+void Renderer::writeFragUni(quint8* p, const QVector3D& eyePos)
+{
+    float ECCameraPosition[] = { eyePos.x(), eyePos.y(), eyePos.z() };
+    memcpy(p, ECCameraPosition, 12);
+    p += 16;
+
+    // Material
+    float ka[] = { 0.05f, 0.05f, 0.05f };
+    memcpy(p, ka, 12);
+    p += 16;
+
+    float kd[] = { 0.7f, 0.7f, 0.7f };
+    memcpy(p, kd, 12);
+    p += 16;
+
+    float ks[] = { 0.66f, 0.66f, 0.66f };
+    memcpy(p, ks, 12);
+    p += 16;
+
+    // Light parameters
+    float ECLightPosition[] = { lightPos.x(), lightPos.y(), lightPos.z() };
+    memcpy(p, ECLightPosition, 12);
+    p += 16;
+
+    float att[] = { 1, 0, 0 };
+    memcpy(p, att, 12);
+    p += 16;
+
+    float color[] = { 1.0f, 1.0f, 1.0f };
+    memcpy(p, color, 12);
+    p += 12; // next we have two floats which have an alignment of 4, hence 12 only
+
+    float intensity = 0.8f;
+    memcpy(p, &intensity, 4);
+    p += 4;
+
+    float specularExp = 150.0f;
+    memcpy(p, &specularExp, 4);
+    p += 4;
+}
+
+void Renderer::buildDrawCalls()
+{
+    if (!hasObject) {
+        return;
+    }
+
+    VkDevice dev = m_window->device(); 
+    VkCommandBuffer cb = m_window->currentCommandBuffer();
+
+    m_devFuncs->vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipeline);
+    
+    VkDeviceSize vbOffset = 0;
+    m_devFuncs->vkCmdBindVertexBuffers(cb, 0, 1,  &m_objectVertexBuf, &vbOffset);
+    m_devFuncs->vkCmdBindVertexBuffers(cb, 1, 1, &m_instBuf, &vbOffset);
+    
+
+    uint32_t frameUniOffset = m_window->currentFrame() * (m_material.vertUniSize + m_material.fragUniSize); 
+    uint32_t frameUniOffsets[] = { frameUniOffset, frameUniOffset };  
+    m_devFuncs->vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_material.pipelineLayout, 0, 1,
+        &m_material.descSet, 2, frameUniOffsets); 
+
+    if (m_vpDirty) {
+        if (m_vpDirty)
+            --m_vpDirty;
+
+        QMatrix4x4 vp, model; 
+        QMatrix3x3 modelNormal; 
+        QVector3D eyePos; 
+        getMatrices(&vp, &model, &modelNormal, &eyePos); 
+
+        quint8* p;
+        VkResult err = m_devFuncs->vkMapMemory(dev, m_bufMem,
+            m_material.uniMemStartOffset + frameUniOffset,
+            m_material.vertUniSize + m_material.fragUniSize,
+            0, reinterpret_cast<void**>(&p));
+        if (err != VK_SUCCESS)
+            qFatal("Failed to map memory: %d", err);
+
+
+        //vertex Uniforms
+        memcpy(p, vp.constData(), 64); 
+        memcpy(p + 64, model.constData(), 64); 
+        const float* mnp = modelNormal.constData(); 
+        memcpy(p + 128, mnp, 12); 
+        memcpy(p + 128 + 16, mnp + 3, 12); 
+        memcpy(p + 128 + 32, mnp + 6, 12);
+
+
+        //fragment Uniforms
+        p += m_material.vertUniSize;
+        writeFragUni(p, eyePos); 
+
+        m_devFuncs->vkUnmapMemory(dev, m_bufMem); 
+    }
+
+    m_devFuncs->vkCmdDraw(cb, object->getVerticieCount(), 1, 0, 0);
 }
 
 void Renderer::startNextFrame() 
 {
-   
+    ensureBuffers();
+    ensureInstanceBuffer();
+
+    VkCommandBuffer cb = m_window->currentCommandBuffer();
+    const QSize sz = m_window->swapChainImageSize();
+
+    VkClearColorValue clearColor = { { 0.1f, 0.1f, 0.1f, 1.0f } };
+    VkClearDepthStencilValue clearDS = { 1, 0 };
+    VkClearValue clearValues[3];
+    memset(clearValues, 0, sizeof(clearValues));
+
+    clearValues[0].color = clearValues[2].color = clearColor; 
+    clearValues[1].depthStencil = clearDS;
+    
+    VkRenderPassBeginInfo rpBeginInfo;
+    memset(&rpBeginInfo, 0, sizeof(rpBeginInfo)); 
+    rpBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO; 
+    rpBeginInfo.renderPass = m_window->defaultRenderPass(); 
+    rpBeginInfo.framebuffer = m_window->currentFramebuffer(); 
+    rpBeginInfo.renderArea.extent.width = sz.width(); 
+    rpBeginInfo.renderArea.extent.height = sz.height(); 
+    rpBeginInfo.clearValueCount = m_window->sampleCountFlagBits() > VK_SAMPLE_COUNT_1_BIT ? 3 : 2; 
+    rpBeginInfo.pClearValues = clearValues; 
+    VkCommandBuffer cmdBuf = m_window->currentCommandBuffer();
+    m_devFuncs->vkCmdBeginRenderPass(cmdBuf, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    
+    VkViewport viewport = { 
+        0, 0,
+        float(sz.width()), float(sz.height()), 
+        0, 1
+    };
+    m_devFuncs->vkCmdSetViewport(cb, 0, 1, &viewport); 
+
+    VkRect2D scissor = {
+        { 0, 0 },
+        { uint32_t(sz.width()), uint32_t(sz.height()) } 
+    };
+    m_devFuncs->vkCmdSetScissor(cb, 0, 1, &scissor); 
+
+    buildDrawCalls();
+
+    m_devFuncs->vkCmdEndRenderPass(cmdBuf);
+
+   /* m_rotation += 0.4f;
+    markViewProjDirty();*/
+    m_window->frameReady();
+    m_window->requestUpdate();
 }
 
-void Renderer::addObject(std::shared_ptr<Object> object)
+void Renderer::addObject(std::shared_ptr<Object> _object)
 {
-    objects.push_back(object);
+    object = _object;
+    hasObject = true;
+    markViewProjDirty();
 }
-
-

@@ -21,8 +21,12 @@ layout(std140, binding = 0) uniform buf {
 
 void main()
 {
-    vECVertNormal = vECVertNormal;
-    vECVertPos = vec3(1,1,1);
+    vECVertNormal = normalize(ubuf.modelNormal * normal);
+    mat4 t = mat4(1, 0, 0, 0,
+                  0, 1, 0, 0,
+                  0, 0, 1, 0,
+                  instTranslate.x, instTranslate.y, instTranslate.z, 1);
+    vECVertPos = vec3(t * ubuf.model * position);
     vDiffuseAdjust = instDiffuseAdjust;
-    gl_Position = vec4(1,1,1,1);
+    gl_Position = ubuf.vp * t * ubuf.model * position;
 }

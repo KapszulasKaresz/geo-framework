@@ -14,6 +14,33 @@ const BaseMesh &Object::baseMesh() const {
   return mesh;
 }
 
+float* Object::getVertexData() const
+{
+    float* ret = new float[getVerticieCount() * 8];
+    int i = 0;
+    for (auto f : mesh.faces()) {
+        for (auto v : f.vertices()) {
+            ret[i] = mesh.point(v).data()[0];
+            ret[i + 1] = mesh.point(v).data()[1];
+            ret[i + 2] = mesh.point(v).data()[2];
+            ret[i + 3] = 0;
+            ret[i + 4] = 0;
+            ret[i + 5] = mesh.normal(v).data()[0];
+            ret[i + 6] = mesh.normal(v).data()[1];
+            ret[i + 7] = mesh.normal(v).data()[2];
+            i += 8;
+        }
+    }
+
+    return ret;
+}
+
+int Object::getVerticieCount() const
+{
+    int verticieCount = mesh.n_faces() * 3;
+    return verticieCount;
+}
+
 void Object::draw(const Visualization &vis) const {
   glPolygonMode(GL_FRONT_AND_BACK,
                 !vis.show_solid && vis.show_wireframe ? GL_LINE : GL_FILL);

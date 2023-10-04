@@ -21,5 +21,20 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
+    vec3 unnormL = ubuf.ECLightPosition - vECVertPos;
+    float dist = length(unnormL);
+    float att = 1.0 / (ubuf.attenuation.x + ubuf.attenuation.y * dist + ubuf.attenuation.z * dist * dist);
+
+    vec3 N = normalize(vECVertNormal);
+    vec3 L = normalize(unnormL);
+    float NL = max(0.0, dot(N, L));
+    vec3 dColor = att * ubuf.intensity * ubuf.color * NL;
+
+    vec3 R = reflect(L, N);
+    vec3 V = normalize(ubuf.ECCameraPosition - vECVertPos);
+    float RV = max(0.0, dot(R, V));
+    vec3 sColor = att * ubuf.intensity * ubuf.color * pow(RV, ubuf.specularExp);
+
     fragColor = vec4(1,1,1,1);
 }
+

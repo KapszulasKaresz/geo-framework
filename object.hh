@@ -8,6 +8,8 @@ public:
   explicit Object(std::string filename);
   virtual ~Object();
   const BaseMesh &baseMesh() const;
+  float* getVertexData() const;
+  int getVerticieCount() const;
   virtual void draw(const Visualization &vis) const;
   virtual void drawWithNames(const Visualization &vis) const = 0;
   virtual Vector postSelection(int selected) = 0;

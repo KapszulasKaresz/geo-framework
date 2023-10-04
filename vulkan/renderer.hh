@@ -23,17 +23,27 @@ public:
 private:
 
     void createObjectPipeline();
+    void ensureBuffers();
+    void ensureInstanceBuffer();
+    void getMatrices(QMatrix4x4* vp, QMatrix4x4* model, QMatrix3x3* modelNormal, QVector3D* eyePos);
+    void writeFragUni(quint8* p, const QVector3D& eyePos);
+    void buildDrawCalls();
     void markViewProjDirty() { m_vpDirty = m_window->concurrentFrameCount(); }
 
 
     QVulkanWindow* m_window;
     QVulkanDeviceFunctions* m_devFuncs;
+   
+    std::shared_ptr<Object> object;
 
-    std::vector<std::shared_ptr<Object>> objects;
+    bool hasObject = false;
+
     Camera cam;
     QVector3D lightPos;
 
-    VkBuffer objectVertexBuffer = VK_NULL_HANDLE;
+    float m_rotation = 0.0f;
+
+    VkBuffer m_objectVertexBuf = VK_NULL_HANDLE;
 
     struct {
         VkDeviceSize vertUniSize;
@@ -49,7 +59,13 @@ private:
     } m_material;
 
     VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
+    
+    VkBuffer m_uniBuf = VK_NULL_HANDLE; 
+    VkBuffer m_instBuf = VK_NULL_HANDLE;
+    VkDeviceMemory m_bufMem = VK_NULL_HANDLE;
+    VkDeviceMemory m_instBufMem = VK_NULL_HANDLE;
 
     QMatrix4x4 m_proj;
+    bool m_inst = false;
     int m_vpDirty = 0;
 };
