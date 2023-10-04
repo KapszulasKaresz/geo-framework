@@ -29,12 +29,6 @@ Window::Window(QApplication *parent) :
   connect(viewer, &VulkanWindow::endComputation, this, &Window::endComputation);
   setCentralWidget(wrapper);
 
- /* viewer = new Viewer(this);
-  connect(viewer, &Viewer::startComputation, this, &Window::startComputation);
-  connect(viewer, &Viewer::midComputation, this, &Window::midComputation);
-  connect(viewer, &Viewer::endComputation, this, &Window::endComputation);
-  setCentralWidget(viewer);*/
-
   auto openAction = new QAction(tr("&Open"), this);
   openAction->setShortcut(tr("Ctrl+O"));
   openAction->setStatusTip(tr("Load a model from a file"));

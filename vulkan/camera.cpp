@@ -50,3 +50,8 @@ void Camera::strafe(float amount)
     pos[0] += amount * right.x();
     pos[2] += amount * right.z();
 }
+
+void Camera::move(QVector3D amount)
+{
+    pos += amount;
+}

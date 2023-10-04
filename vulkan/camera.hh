@@ -23,6 +23,7 @@ public:
 	void pitch(float degrees);
 	void walk(float amount);
 	void strafe(float amount);
+	void move(QVector3D amount);
 
 	QMatrix4x4 viewMatrix() const;
 

@@ -34,7 +34,12 @@ signals:
 
 private: 
     virtual void keyPressEvent(QKeyEvent* e) override;
+    virtual void keyReleaseEvent(QKeyEvent* e) override;
     virtual void mouseMoveEvent(QMouseEvent* e) override;
+    void mousePressEvent(QMouseEvent* e) override;
+    void mouseReleaseEvent(QMouseEvent* e) override;
 
+    QPoint m_lastpos;
+    bool m_ispressed = false;
     Renderer* renderer;
 };

@@ -8,7 +8,7 @@
 
 VulkanWindow::VulkanWindow() :QVulkanWindow()
 {
-    renderer = new Renderer(this);
+    renderer = new Renderer(this, false);
 }
 
 QVulkanWindowRenderer* VulkanWindow::createRenderer()
@@ -59,10 +59,10 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             //TODO SHOW CONTROL POINTS
             break;
         case Qt::Key_S:
-            //TODO SHOW SOLID
+            renderer->setWireframe(false);
             break;
         case Qt::Key_W:
-            //TODO SHOW WIREFRAME
+            renderer->setWireframe(true);
             break;
         case Qt::Key_X:
             //TODO X STANDARD POS
@@ -73,8 +73,20 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
         case Qt::Key_Z:
             //TODO Z STANDARD POS;
             break;
+        case Qt::Key_Up:
+            renderer->setCamVelocity(QVector3D(0, 1, 0));
+            break;
+        case Qt::Key_Down:
+            renderer->setCamVelocity(QVector3D(0, -1, 0));
+            break;
+        case Qt::Key_Left:
+            renderer->setCamVelocity(QVector3D(-1, 0, 0));
+            break;
+        case Qt::Key_Right:
+            renderer->setCamVelocity(QVector3D(1, 0, 0));
+            break;
         default:
-           ;
+            ;
         }
     else if (e->modifiers() == Qt::KeypadModifier)
         switch (e->key()) {
@@ -90,6 +102,31 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
         }
 }
 
+void VulkanWindow::keyReleaseEvent(QKeyEvent* e)
+{
+    renderer->setCamVelocity(QVector3D(0, 0, 0));
+}
+
 void VulkanWindow::mouseMoveEvent(QMouseEvent* e)
 {
+    if (!m_ispressed)
+        return;
+
+    int dx = e->position().toPoint().x() - m_lastpos.x();
+    int dy = e->position().toPoint().y() - m_lastpos.y();
+
+    renderer->rotateCam(dx, dy);
+
+    m_lastpos = e->position().toPoint();
+}
+
+void VulkanWindow::mousePressEvent(QMouseEvent* e)
+{
+    m_ispressed = true;
+    m_lastpos = e->position().toPoint();
+}
+
+void VulkanWindow::mouseReleaseEvent(QMouseEvent* e)
+{
+    m_ispressed = false;
 }

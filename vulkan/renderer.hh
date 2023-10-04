@@ -1,5 +1,6 @@
 #pragma once
 #include <qvulkanwindow.h>
+#include <qdatetime.h>
 #include <QVulkanDeviceFunctions>
 #include <QMutex>
 #include "vulkan/camera.hh"
@@ -8,17 +9,20 @@
 
 class Renderer : public QVulkanWindowRenderer {
 public:
-    Renderer(QVulkanWindow* w);
+    Renderer(QVulkanWindow* w, bool _wireframe);
 
     void preInitResources() override;
     void initResources() override;
     void initSwapChainResources() override;
     void releaseSwapChainResources() override;
     void releaseResources() override;
-
     void startNextFrame() override;
 
     void addObject(std::shared_ptr<Object> object);
+    void setWireframe(bool _wireframe);
+    void setCamVelocity(const QVector3D& _vel);
+    void rotateCam(int dx, int dy);
+
     ~Renderer() {}
 private:
 
@@ -29,6 +33,7 @@ private:
     void writeFragUni(quint8* p, const QVector3D& eyePos);
     void buildDrawCalls();
     void markViewProjDirty() { m_vpDirty = m_window->concurrentFrameCount(); }
+    void moveCam();
 
 
     QVulkanWindow* m_window;
@@ -39,6 +44,7 @@ private:
     bool hasObject = false;
 
     Camera cam;
+    QVector3D camVelocity = QVector3D(0,0,0);
     QVector3D lightPos;
 
     float m_rotation = 0.0f;
@@ -67,5 +73,8 @@ private:
 
     QMatrix4x4 m_proj;
     bool m_inst = false;
+    bool wireframe = false;
     int m_vpDirty = 0;
+
+    int lastFrame = QDateTime::currentMSecsSinceEpoch();
 };

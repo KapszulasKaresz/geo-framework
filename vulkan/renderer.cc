@@ -10,7 +10,7 @@ static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
 }
 
 
-Renderer::Renderer(QVulkanWindow* w) : m_window(w), lightPos(QVector3D(0.0f, 50.0f, 150.0f)), cam(QVector3D(0.0f, 0.0f, 5.0f)) {
+Renderer::Renderer(QVulkanWindow* w, bool _wireframe) : m_window(w), lightPos(QVector3D(0.0f, 50.0f, 150.0f)), cam(QVector3D(0.0f, 0.0f, 5.0f)), wireframe(_wireframe) {
 }
 
 void Renderer::preInitResources() {
@@ -216,8 +216,8 @@ void Renderer::createObjectPipeline()
     VkPipelineRasterizationStateCreateInfo rs;
     memset(&rs, 0, sizeof(rs));
     rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rs.polygonMode = VK_POLYGON_MODE_LINE;
-    rs.cullMode = VK_CULL_MODE_BACK_BIT;
+    rs.polygonMode = wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+    rs.cullMode = wireframe ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
     rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.lineWidth = 1.0f;
     pipelineInfo.pRasterizationState = &rs;
@@ -309,7 +309,30 @@ void Renderer::releaseResources() {
         m_material.fs.reset();
     }
 
-    //TODO FREE REMAINING RESOURCES!!!
+    if (m_objectVertexBuf) {
+        m_devFuncs->vkDestroyBuffer(dev, m_objectVertexBuf, nullptr);
+        m_objectVertexBuf = VK_NULL_HANDLE;
+    }
+
+    if (m_uniBuf) {
+        m_devFuncs->vkDestroyBuffer(dev, m_uniBuf, nullptr);
+        m_uniBuf = VK_NULL_HANDLE;
+    }
+
+    if (m_bufMem) {
+        m_devFuncs->vkFreeMemory(dev, m_bufMem, nullptr);
+        m_bufMem = VK_NULL_HANDLE;
+    }
+
+    if (m_instBuf) {
+        m_devFuncs->vkDestroyBuffer(dev, m_instBuf, nullptr);
+        m_instBuf = VK_NULL_HANDLE;
+    }
+
+    if (m_instBufMem) {
+        m_devFuncs->vkFreeMemory(dev, m_instBufMem, nullptr);
+        m_instBufMem = VK_NULL_HANDLE;
+    }
 }
 
 void Renderer::ensureBuffers()
@@ -562,6 +585,13 @@ void Renderer::buildDrawCalls()
     m_devFuncs->vkCmdDraw(cb, object->getVerticieCount(), 1, 0, 0);
 }
 
+void Renderer::moveCam()
+{
+    int elapsed = QDateTime::currentMSecsSinceEpoch() - lastFrame;
+    cam.move(camVelocity / 500.0f * elapsed);
+    markViewProjDirty();
+}
+
 void Renderer::startNextFrame() 
 {
     ensureBuffers();
@@ -603,12 +633,16 @@ void Renderer::startNextFrame()
     };
     m_devFuncs->vkCmdSetScissor(cb, 0, 1, &scissor); 
 
+   
+
+    moveCam();
     buildDrawCalls();
 
     m_devFuncs->vkCmdEndRenderPass(cmdBuf);
 
    /* m_rotation += 0.4f;
     markViewProjDirty();*/
+    lastFrame = QDateTime::currentMSecsSinceEpoch();
     m_window->frameReady();
     m_window->requestUpdate();
 }
@@ -617,5 +651,30 @@ void Renderer::addObject(std::shared_ptr<Object> _object)
 {
     object = _object;
     hasObject = true;
+    markViewProjDirty();
+}
+
+void Renderer::setWireframe(bool _wireframe)
+{
+    if (wireframe == _wireframe)
+        return;
+
+    wireframe = _wireframe;
+    m_inst = false;
+    releaseResources();
+    initResources();
+    markViewProjDirty();
+}
+
+void Renderer::setCamVelocity(const QVector3D& _vel)
+{
+    camVelocity = _vel;
+}
+
+void Renderer::rotateCam(int dx, int dy)
+{
+    cam.pitch(dy / 8.0f);
+    cam.yaw(dx / 8.0f);
+
     markViewProjDirty();
 }
