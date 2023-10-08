@@ -35,6 +35,6 @@ void main()
     float RV = max(0.0, dot(R, V));
     vec3 sColor = att * ubuf.intensity * ubuf.color * pow(RV, ubuf.specularExp);
 
-    fragColor = vec4(1,1,1,1);
+    fragColor = vec4(ubuf.ka + (ubuf.kd ) * dColor, 1.0);
 }
 

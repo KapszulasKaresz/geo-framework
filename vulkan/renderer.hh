@@ -22,6 +22,7 @@ public:
     void setWireframe(bool _wireframe);
     void setCamVelocity(const QVector3D& _vel);
     void rotateCam(int dx, int dy);
+    void rotateObject(int dx, int dy);
 
     ~Renderer() {}
 private:
@@ -47,7 +48,8 @@ private:
     QVector3D camVelocity = QVector3D(0,0,0);
     QVector3D lightPos;
 
-    float m_rotation = 0.0f;
+    float m_rotation_x = 0.0f;
+    float m_rotation_y = 0.0f;
 
     VkBuffer m_objectVertexBuf = VK_NULL_HANDLE;
 

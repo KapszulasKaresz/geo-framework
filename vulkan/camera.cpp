@@ -51,6 +51,11 @@ void Camera::strafe(float amount)
     pos[2] += amount * right.z();
 }
 
+void Camera::fly(float amount)
+{
+    pos[1] += amount * up.y();
+}
+
 void Camera::move(QVector3D amount)
 {
     pos += amount;

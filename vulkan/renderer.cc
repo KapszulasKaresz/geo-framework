@@ -10,7 +10,7 @@ static inline VkDeviceSize aligned(VkDeviceSize v, VkDeviceSize byteAlign)
 }
 
 
-Renderer::Renderer(QVulkanWindow* w, bool _wireframe) : m_window(w), lightPos(QVector3D(0.0f, 50.0f, 150.0f)), cam(QVector3D(0.0f, 0.0f, 5.0f)), wireframe(_wireframe) {
+Renderer::Renderer(QVulkanWindow* w, bool _wireframe) : m_window(w), lightPos(QVector3D(0.0f, 50.0f, 100.0f)), cam(QVector3D(0.0f, 0.0f, 5.0f)), wireframe(_wireframe) {
 }
 
 void Renderer::preInitResources() {
@@ -39,7 +39,7 @@ void Renderer::initResources() {
         m_material.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/test_vert.spv"));
     }
     if (!m_material.fs.isValid()) {
-        m_material.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/test_frag.spv"));
+        m_material.fs.load(inst, dev,wireframe ? QString("D:/Temalabor/geo-framework/shaders/wireframe_frag.spv") : QString("D:/Temalabor/geo-framework/shaders/test_frag.spv"));
     }
 
     VkPipelineCacheCreateInfo pipelineCacheInfo;
@@ -263,6 +263,7 @@ void Renderer::createObjectPipeline()
 }
 
 void Renderer::initSwapChainResources() {
+    qDebug("initSwapChainResources");
     m_proj = m_window->clipCorrectionMatrix();
     const QSize s = m_window->swapChainImageSize();
     m_proj.perspective(45.0f, s.width() / (float)s.height(), 0.01f, 1000.0f);
@@ -478,7 +479,8 @@ void Renderer::ensureInstanceBuffer()
 void Renderer::getMatrices(QMatrix4x4* vp, QMatrix4x4* model, QMatrix3x3* modelNormal, QVector3D* eyePos)
 {
     model->setToIdentity();
-    model->rotate(m_rotation, 1, 1, 0);
+    model->rotate(m_rotation_x, 0, 1, 0);
+    model->rotate(m_rotation_y, 1, 0, 0);
     *modelNormal = model->normalMatrix();
     QMatrix4x4 view = cam.viewMatrix();
     *vp = m_proj * view;
@@ -493,7 +495,7 @@ void Renderer::writeFragUni(quint8* p, const QVector3D& eyePos)
     p += 16;
 
     // Material
-    float ka[] = { 0.05f, 0.05f, 0.05f };
+    float ka[] = { 0.25f, 0.25f, 0.25f };
     memcpy(p, ka, 12);
     p += 16;
 
@@ -522,7 +524,7 @@ void Renderer::writeFragUni(quint8* p, const QVector3D& eyePos)
     memcpy(p, &intensity, 4);
     p += 4;
 
-    float specularExp = 150.0f;
+    float specularExp = 1500.0f;
     memcpy(p, &specularExp, 4);
     p += 4;
 }
@@ -588,7 +590,9 @@ void Renderer::buildDrawCalls()
 void Renderer::moveCam()
 {
     int elapsed = QDateTime::currentMSecsSinceEpoch() - lastFrame;
-    cam.move(camVelocity / 500.0f * elapsed);
+    cam.walk(camVelocity.z() / 500.0f * elapsed);
+    cam.strafe(camVelocity.x() / 500.0f * elapsed);
+    cam.fly(camVelocity.y() / 500.0f * elapsed);
     markViewProjDirty();
 }
 
@@ -650,6 +654,9 @@ void Renderer::startNextFrame()
 void Renderer::addObject(std::shared_ptr<Object> _object)
 {
     object = _object;
+    VkDevice dev = m_window->device();
+    m_devFuncs->vkDestroyBuffer(dev, m_objectVertexBuf, nullptr);
+    m_objectVertexBuf = VK_NULL_HANDLE;
     hasObject = true;
     markViewProjDirty();
 }
@@ -663,7 +670,6 @@ void Renderer::setWireframe(bool _wireframe)
     m_inst = false;
     releaseResources();
     initResources();
-    markViewProjDirty();
 }
 
 void Renderer::setCamVelocity(const QVector3D& _vel)
@@ -676,5 +682,12 @@ void Renderer::rotateCam(int dx, int dy)
     cam.pitch(dy / 8.0f);
     cam.yaw(dx / 8.0f);
 
+    markViewProjDirty();
+}
+
+void Renderer::rotateObject(int dx, int dy)
+{
+    m_rotation_x += dx / 8.0f;
+    m_rotation_y += dy / 8.0f;
     markViewProjDirty();
 }
