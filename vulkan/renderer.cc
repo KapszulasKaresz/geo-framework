@@ -33,13 +33,30 @@ void Renderer::initResources() {
     m_devFuncs = inst->deviceFunctions(dev);
 
     m_material.vertUniSize = aligned(2 * 64 + 48, uniAlign);
-    m_material.fragUniSize = aligned(6 * 16 + 12 + 2 * 4, uniAlign);
+    m_material.fragUniSize = aligned(7 * 16 + 12 + 3 * 4, uniAlign);
 
     if (!m_material.vs.isValid()) {
         m_material.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/test_vert.spv"));
     }
-    if (!m_material.fs.isValid()) {
-        m_material.fs.load(inst, dev,wireframe ? QString("D:/Temalabor/geo-framework/shaders/wireframe_frag.spv") : QString("D:/Temalabor/geo-framework/shaders/test_frag.spv"));
+
+    switch (m_visType)
+    {
+    case VisType::PLAIN:
+        if (!m_material.fs.isValid()) {
+            m_material.fs.load(inst, dev, wireframe ? QString("D:/Temalabor/geo-framework/shaders/wireframe_frag.spv") : QString("D:/Temalabor/geo-framework/shaders/test_frag.spv"));
+        }
+        break;
+    case VisType::MEAN:
+        break;
+    case VisType::SLICING:
+        if (!m_material.fs.isValid()) {
+            m_material.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/slicing_frag.spv"));
+        }
+        break;
+    case VisType::ISOPHOTES:
+        break;
+    default:
+        break;
     }
 
     VkPipelineCacheCreateInfo pipelineCacheInfo;
@@ -217,7 +234,7 @@ void Renderer::createObjectPipeline()
     memset(&rs, 0, sizeof(rs));
     rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rs.polygonMode = wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
-    rs.cullMode = wireframe ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
+    rs.cullMode =  VK_CULL_MODE_NONE;
     rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.lineWidth = 1.0f;
     pipelineInfo.pRasterizationState = &rs;
@@ -507,6 +524,10 @@ void Renderer::writeFragUni(quint8* p, const QVector3D& eyePos)
     memcpy(p, ks, 12);
     p += 16;
 
+    float slicingdir[] = { m_slicingDir.x(), m_slicingDir.y(), m_slicingDir.z() };
+    memcpy(p, slicingdir, 12);
+    p += 16;
+
     // Light parameters
     float ECLightPosition[] = { lightPos.x(), lightPos.y(), lightPos.z() };
     memcpy(p, ECLightPosition, 12);
@@ -526,6 +547,10 @@ void Renderer::writeFragUni(quint8* p, const QVector3D& eyePos)
 
     float specularExp = 1500.0f;
     memcpy(p, &specularExp, 4);
+    p += 4;
+
+    float slicingScaling = m_slicingScaling;
+    memcpy(p, &slicingScaling, 4);
     p += 4;
 }
 
@@ -587,6 +612,13 @@ void Renderer::buildDrawCalls()
     m_devFuncs->vkCmdDraw(cb, object->getVerticieCount(), 1, 0, 0);
 }
 
+void Renderer::resetPipeline()
+{
+    releaseResources();
+    initResources();
+    initSwapChainResources(); 
+}
+
 void Renderer::moveCam()
 {
     int elapsed = QDateTime::currentMSecsSinceEpoch() - lastFrame;
@@ -638,26 +670,26 @@ void Renderer::startNextFrame()
     m_devFuncs->vkCmdSetScissor(cb, 0, 1, &scissor); 
 
    
-
     moveCam();
     buildDrawCalls();
 
     m_devFuncs->vkCmdEndRenderPass(cmdBuf);
 
-   /* m_rotation += 0.4f;
-    markViewProjDirty();*/
     lastFrame = QDateTime::currentMSecsSinceEpoch();
     m_window->frameReady();
     m_window->requestUpdate();
 }
 
-void Renderer::addObject(std::shared_ptr<Object> _object)
+void Renderer::addObject(Object* _object)
 {
+    if(object != nullptr)
+        delete object;
     object = _object;
     VkDevice dev = m_window->device();
     m_devFuncs->vkDestroyBuffer(dev, m_objectVertexBuf, nullptr);
     m_objectVertexBuf = VK_NULL_HANDLE;
     hasObject = true;
+    m_inst = false;
     markViewProjDirty();
 }
 
@@ -668,8 +700,7 @@ void Renderer::setWireframe(bool _wireframe)
 
     wireframe = _wireframe;
     m_inst = false;
-    releaseResources();
-    initResources();
+    resetPipeline();
 }
 
 void Renderer::setCamVelocity(const QVector3D& _vel)
@@ -690,4 +721,52 @@ void Renderer::rotateObject(int dx, int dy)
     m_rotation_x += dx / 8.0f;
     m_rotation_y += dy / 8.0f;
     markViewProjDirty();
+}
+
+double* Renderer::getSlicingDir()
+{
+    double* ret =new double[3];
+    ret[0] = m_slicingDir.x();
+    ret[1] = m_slicingDir.y();
+    ret[2] = m_slicingDir.z();
+    return ret;
+}
+
+void Renderer::setSlicingDir(double x, double y, double z)
+{
+    m_slicingDir.setX(x);
+    m_slicingDir.setY(y);
+    m_slicingDir.setZ(z);
+    m_slicingDir.normalize();
+}
+
+void Renderer::setVisType(VisType visType)
+{ 
+    if (m_visType == visType)
+        return;
+    m_visType = visType;
+    resetPipeline();
+}
+
+void Renderer::swapOrthoView()
+{
+    isOrtho = !isOrtho;
+    if (isOrtho) {
+        m_proj = m_window->clipCorrectionMatrix();
+        const QSize s = m_window->swapChainImageSize();
+        m_proj.ortho(0, s.width(), 0, s.height(),0, 1);
+        
+    }
+    else {
+        m_proj = m_window->clipCorrectionMatrix(); 
+        const QSize s = m_window->swapChainImageSize(); 
+        m_proj.perspective(45.0f, s.width() / (float)s.height(), 0.01f, 1000.0f);
+    }
+
+    markViewProjDirty();
+}
+
+Renderer::~Renderer()
+{
+    delete object;
 }

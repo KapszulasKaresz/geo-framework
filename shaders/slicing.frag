@@ -30,13 +30,15 @@ void main()
     vec3 N = normalize(vECVertNormal);
     vec3 L = normalize(unnormL);
     float NL = max(0.0, dot(N, L));
-    vec3 dColor = att * ubuf.intensity * ubuf.color * NL;
+    vec3 white = vec3(1);
+    vec3 green = vec3(0,1,0);
+    vec3 color = vec3(1);
+    if(floor(dot(vECVertPos, ubuf.slicingDir) / ubuf.slicingScaling) - (2* floor(floor(dot(vECVertPos, ubuf.slicingDir) / ubuf.slicingScaling / 2))) == 0) {
+        color = white;
+    } else {
+        color = green;
+    }
+    vec3 dColor = att * ubuf.intensity * color * NL;
 
-    vec3 R = reflect(L, N);
-    vec3 V = normalize(ubuf.ECCameraPosition - vECVertPos);
-    float RV = max(0.0, dot(R, V));
-    vec3 sColor = att * ubuf.intensity * ubuf.color * pow(RV, ubuf.specularExp);
-
-    fragColor = vec4(ubuf.ka + (ubuf.kd ) * dColor, 1.0);
+    fragColor = vec4(ubuf.ka * color + (ubuf.kd ) * dColor, 1.0);
 }
-

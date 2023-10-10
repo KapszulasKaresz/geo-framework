@@ -25,6 +25,7 @@ public:
 	void strafe(float amount);
 	void fly(float amount);
 	void move(QVector3D amount);
+	QVector3D getForward() const { return forward; }
 
 	QMatrix4x4 viewMatrix() const;
 

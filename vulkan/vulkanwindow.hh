@@ -20,10 +20,10 @@ public:
     void setMeanMin(double min){}
     double getMeanMax() const { return 0; }
     void setMeanMax(double max){}
-    const double* getSlicingDir() const { return 0; }
-    void setSlicingDir(double x, double y, double z){}
-    double getSlicingScaling() const { return 0; }
-    void setSlicingScaling(double scaling){}
+    const double* getSlicingDir() const;
+    void setSlicingDir(double x, double y, double z) { renderer->setSlicingDir(x, y, z); }
+    double getSlicingScaling() const;
+    void setSlicingScaling(double scaling) { renderer->setSlicingScaling(scaling); }
     void deleteObjects(){}
     bool open(std::string filename);
 

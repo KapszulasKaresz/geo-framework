@@ -204,7 +204,6 @@ void Window::setSlicing() {
   if(dlg->exec() == QDialog::Accepted) {
     viewer->setSlicingDir(sb_v[0]->value(), sb_v[1]->value(), sb_v[2]->value());
     viewer->setSlicingScaling(sb_s->value());
-    wrapper->update();
   }
 }
 

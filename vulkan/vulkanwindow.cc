@@ -16,13 +16,23 @@ QVulkanWindowRenderer* VulkanWindow::createRenderer()
     return renderer;
 }
 
+const double* VulkanWindow::getSlicingDir() const
+{
+    return renderer->getSlicingDir();
+}
+
+double VulkanWindow::getSlicingScaling() const
+{
+    return renderer->getSlicingScaling();
+}
+
 bool VulkanWindow::open(std::string filename)
 {
-    std::shared_ptr<Object> surface;
+    Object* surface;
     if (filename.ends_with(".bzr"))
-        surface = std::make_shared<Bezier>(filename);
+        surface = new Bezier(filename);
     else
-        surface = std::make_shared<Mesh>(filename);
+        surface = new Mesh(filename);
     if (!surface->valid())
         return false;
     
@@ -39,20 +49,24 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             break;
         case Qt::Key_O:
             //TODO ORTOGONAL PERSPECTIVE
+            renderer->swapOrthoView();
             break;
         case Qt::Key_P:
-            //TODO PLAIN VIS TYPE
+            renderer->setVisType(VisType::PLAIN);
             break;
         case Qt::Key_M:
-            //TODO MEAN VIS TYPE
+            //TODO
+            renderer->setVisType(VisType::MEAN); 
             break;
         case Qt::Key_L:
-            //TODO SLICING VIS TYPE
+            renderer->setVisType(VisType::SLICING);
             break;
         case Qt::Key_I:
+            renderer->setVisType(VisType::ISOPHOTES);
             //TODO ISOPHOTE TEXTURE
             break;
         case Qt::Key_E:
+            renderer->setVisType(VisType::ISOPHOTES);
             //TODO ENVIORMENT TEXTURE
             break;
         case Qt::Key_C:
@@ -97,13 +111,15 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
     else if (e->modifiers() == Qt::KeypadModifier)
         switch (e->key()) {
         case Qt::Key_Plus:
-            //TODO INCREASE SLICING
+            renderer->setSlicingScaling(renderer->getSlicingScaling() * 2);
             break;
         case Qt::Key_Minus:
-            //TODO DECREASE SLICING
+            renderer->setSlicingScaling(renderer->getSlicingScaling() / 2);
             break;
         case Qt::Key_Asterisk:
-            //TODO CHANGE SLICING DIR
+            QVector3D dir = renderer->getCamForward();
+            dir.normalize();
+            renderer->setSlicingDir(dir.x(), dir.y(), dir.z());
             break;
         }
 }
