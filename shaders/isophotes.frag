@@ -26,23 +26,16 @@ layout(location = 0) out vec4 fragColor;
 
 void main()
 {
-    vec3 unnormL = ubuf.ECLightPosition - vECVertPos;
-    float dist = length(unnormL);
-    float att = 1.0 / (ubuf.attenuation.x + ubuf.attenuation.y * dist + ubuf.attenuation.z * dist * dist);
-
     vec3 N = normalize(vECVertNormal);
-    vec3 L = normalize(unnormL);
-    float NL = max(0.0, dot(N, L));
-
-    vec3 r = reflect(normalize(vECVertNormal), N);
-    float m = 2. * sqrt(
-    pow( r.x, 2. ) +
-    pow( r.y, 2. ) +
-    pow( r.z + 1., 2. )
+    vec3 r = reflect(normalize(vECVertPos - ubuf.ECCameraPosition ), N);
+    float m = 2.0 * sqrt(
+    pow( r.x, 2.0 ) +
+    pow( r.y, 2.0 ) +
+    pow( r.z + 1.0, 2.0 )
     );
 
-    vec2 vN = r.xy / m;
+    vec2 vN = r.xy / m + 0.5;
 
     vec3 base = texture(texSampler,vN).rgb;
-    fragColor = vec4(base, 1.);
+    fragColor = vec4(base, 1.0);
 }

@@ -303,9 +303,32 @@ void Renderer::createObjectPipeline()
 
 void Renderer::initSwapChainResources() {
     qDebug("initSwapChainResources");
-    m_proj = m_window->clipCorrectionMatrix();
-    const QSize s = m_window->swapChainImageSize();
-    m_proj.perspective(45.0f, s.width() / (float)s.height(), 0.01f, 1000.0f);
+    if (isOrtho) {
+        m_proj = m_window->clipCorrectionMatrix();
+        const QSize s = m_window->swapChainImageSize();
+        float aratio = s.width() / (float)s.height();
+        float top, bottom, right, left;
+        if (s.width() > s.height())
+        {
+            top = 3.0f;
+            bottom = -top;
+            right = top * aratio;
+            left = -right;
+        }
+        else
+        {
+            right = 3.0f;
+            left = -right;
+            top = right / aratio;
+            bottom = -top;
+        }
+        m_proj.ortho(left, right, bottom, top, 0.01f, 400);
+    }
+    else {
+        m_proj = m_window->clipCorrectionMatrix();
+        const QSize s = m_window->swapChainImageSize();
+        m_proj.perspective(45.0f, s.width() / (float)s.height(), 0.01f, 1000.0f);
+    }
     markViewProjDirty();
 } 
 void Renderer::releaseSwapChainResources() {
@@ -673,8 +696,6 @@ void Renderer::moveCam()
     cam.strafe(camVelocity.x() / 500.0f * elapsed);
     cam.fly(camVelocity.y() / 500.0f * elapsed);
     markViewProjDirty();
-    if(fabs(camVelocity.z()) > 0 || fabs(camVelocity.y()) > 0 || fabs(camVelocity.x()) > 0)
-        m_window->requestUpdate();
 }
 
 void Renderer::startNextFrame() 
@@ -729,6 +750,8 @@ void Renderer::startNextFrame()
     lastFrame = QDateTime::currentMSecsSinceEpoch();
     m_guiMutex.unlock();
     m_window->frameReady();
+    if (fabs(camVelocity.z()) > 0 || fabs(camVelocity.y()) > 0 || fabs(camVelocity.x()) > 0)
+        m_window->requestUpdate();
 }
 
 void Renderer::addObject(Object* _object)
@@ -824,8 +847,23 @@ void Renderer::swapOrthoView()
     if (isOrtho) {
         m_proj = m_window->clipCorrectionMatrix();
         const QSize s = m_window->swapChainImageSize();
-        m_proj.ortho(0, s.width(), 0, s.height(),0, 1);
-        
+        float aratio = s.width() / (float)s.height();
+        float top, bottom, right, left;
+        if (s.width() > s.height())
+        {
+            top = 3.0f;
+            bottom = -top;
+            right = top * aratio;
+            left = -right;
+        }
+        else
+        {
+            right = 3.0f;
+            left = -right;
+            top = right / aratio;
+            bottom = -top;
+        }
+        m_proj.ortho(left, right ,bottom, top, 0.01f, 1000.0f);
     }
     else {
         m_proj = m_window->clipCorrectionMatrix(); 
