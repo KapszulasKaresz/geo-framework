@@ -4,6 +4,8 @@ layout(location = 0) in vec3 vECVertNormal;
 layout(location = 1) in vec3 vECVertPos;
 layout(location = 2) flat in vec3 vDiffuseAdjust;
 
+layout(binding = 2) uniform sampler2D texSampler;
+
 layout(std140, binding = 1) uniform buf {
     vec3 ECCameraPosition;
     vec3 ka;
@@ -19,9 +21,8 @@ layout(std140, binding = 1) uniform buf {
     float slicingScaling;
 } ubuf;
 
-layout(binding = 2) uniform sampler2D texSampler;
-
 layout(location = 0) out vec4 fragColor;
+
 
 void main()
 {
@@ -32,13 +33,16 @@ void main()
     vec3 N = normalize(vECVertNormal);
     vec3 L = normalize(unnormL);
     float NL = max(0.0, dot(N, L));
-    vec3 white = vec3(1);
-    vec3 green = vec3(0,1,0);
-    vec3 color = vec3(1);
-    
-    vec3 color = texture(texSampler, vec2(0.2,0.2)).rgb;
 
-    vec3 dColor = att * ubuf.intensity * color * NL;
+    vec3 r = reflect(normalize(vECVertNormal), N);
+    float m = 2. * sqrt(
+    pow( r.x, 2. ) +
+    pow( r.y, 2. ) +
+    pow( r.z + 1., 2. )
+    );
 
-    fragColor = vec4(ubuf.ka * color + (ubuf.kd ) * dColor, 1.0);
+    vec2 vN = r.xy / m;
+
+    vec3 base = texture(texSampler,vN).rgb;
+    fragColor = vec4(base, 1.);
 }

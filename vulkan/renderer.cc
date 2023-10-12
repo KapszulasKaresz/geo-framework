@@ -35,6 +35,9 @@ void Renderer::initResources() {
     m_material.vertUniSize = aligned(2 * 64 + 48, uniAlign);
     m_material.fragUniSize = aligned(7 * 16 + 12 + 3 * 4, uniAlign);
 
+    m_sphereTexture.commandpool = m_window->graphicsCommandPool();
+    m_sphereTexture.m_window = m_window;
+
     if (!m_material.vs.isValid()) {
         m_material.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/test_vert.spv"));
     }
@@ -45,6 +48,7 @@ void Renderer::initResources() {
         if (!m_material.fs.isValid()) {
             m_material.fs.load(inst, dev, wireframe ? QString("D:/Temalabor/geo-framework/shaders/wireframe_frag.spv") : QString("D:/Temalabor/geo-framework/shaders/test_frag.spv"));
         }
+        m_sphereTexture.load(inst, dev, "environment.png");
         break;
     case VisType::MEAN:
         break;
@@ -54,6 +58,15 @@ void Renderer::initResources() {
         }
         break;
     case VisType::ISOPHOTES:
+        if (!m_material.fs.isValid()) {
+            m_material.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/isophotes_frag.spv"));
+        }
+        if (isEnvironment) {
+            m_sphereTexture.load(inst, dev, "environment.png");
+        }
+        else {
+            m_sphereTexture.load(inst, dev, "isophotes.png"); 
+        }
         break;
     default:
         break;
@@ -126,7 +139,8 @@ void Renderer::createObjectPipeline()
 
     // Descriptor set layout.
     VkDescriptorPoolSize descPoolSizes[] = {
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 2 }
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 2 },
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2}
     };
     VkDescriptorPoolCreateInfo descPoolInfo;
     memset(&descPoolInfo, 0, sizeof(descPoolInfo));
@@ -153,6 +167,14 @@ void Renderer::createObjectPipeline()
             1,
             VK_SHADER_STAGE_FRAGMENT_BIT,
             nullptr
+        },
+        {
+            2,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            1,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            nullptr
+
         }
     };
     VkDescriptorSetLayoutCreateInfo descLayoutInfo = {
@@ -303,11 +325,6 @@ void Renderer::releaseResources() {
         m_material.descPool = VK_NULL_HANDLE;
     }
 
-    if (m_material.pipeline) {
-        m_devFuncs->vkDestroyPipeline(dev, m_material.pipeline, nullptr);
-        m_material.pipeline = VK_NULL_HANDLE;
-    }
-
     if (m_material.pipelineLayout) {
         m_devFuncs->vkDestroyPipelineLayout(dev, m_material.pipelineLayout, nullptr);
         m_material.pipelineLayout = VK_NULL_HANDLE;
@@ -316,6 +333,11 @@ void Renderer::releaseResources() {
     if (m_pipelineCache) {
         m_devFuncs->vkDestroyPipelineCache(dev, m_pipelineCache, nullptr);
         m_pipelineCache = VK_NULL_HANDLE;
+    }
+
+    if (m_material.pipeline) {
+        m_devFuncs->vkDestroyPipeline(dev, m_material.pipeline, nullptr);
+        m_material.pipeline = VK_NULL_HANDLE;
     }
 
     if (m_material.vs.isValid()) {
@@ -351,6 +373,8 @@ void Renderer::releaseResources() {
         m_devFuncs->vkFreeMemory(dev, m_instBufMem, nullptr);
         m_instBufMem = VK_NULL_HANDLE;
     }
+    QVulkanInstance* inst = m_window->vulkanInstance();
+    m_sphereTexture.reset(inst, dev);
 }
 
 void Renderer::ensureBuffers()
@@ -418,10 +442,21 @@ void Renderer::ensureBuffers()
 
 
     //create discriptor sets for uniform buffers
+    const VkPhysicalDeviceLimits* pdevlimits = &m_window->physicalDeviceProperties()->limits;
+    const VkDeviceSize uniAlign = pdevlimits->minUniformBufferOffsetAlignment; 
+
+
     VkDescriptorBufferInfo vertUni = { m_uniBuf, 0, m_material.vertUniSize };
     VkDescriptorBufferInfo fragUni = { m_uniBuf, m_material.vertUniSize, m_material.fragUniSize };
+    VkDescriptorBufferInfo textureBuf = { m_sphereTexture.stagingBuffer ,0 , aligned(m_sphereTexture.imageSize, uniAlign)};
 
-    VkWriteDescriptorSet descWrite[2]; 
+    VkDescriptorImageInfo imageInfo;
+    memset(&imageInfo, 0, sizeof(imageInfo));
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = m_sphereTexture.textureImageView;
+    imageInfo.sampler = m_sphereTexture.textureSampler;
+
+    VkWriteDescriptorSet descWrite[3]; 
     memset(descWrite, 0, sizeof(descWrite));
     descWrite[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET; 
     descWrite[0].dstSet = m_material.descSet; 
@@ -437,7 +472,17 @@ void Renderer::ensureBuffers()
     descWrite[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
     descWrite[1].pBufferInfo = &fragUni;
 
-    m_devFuncs->vkUpdateDescriptorSets(dev, 2, descWrite, 0, nullptr);
+    descWrite[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descWrite[2].dstSet = m_material.descSet;
+    descWrite[2].dstBinding = 1;
+    descWrite[2].dstArrayElement = 0;
+    descWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descWrite[2].descriptorCount = 1;
+    descWrite[2].pImageInfo = &imageInfo;
+    descWrite[2].pBufferInfo = &textureBuf;
+
+
+    m_devFuncs->vkUpdateDescriptorSets(dev, 3, descWrite, 0, nullptr);
 }
 
 void Renderer::ensureInstanceBuffer()
@@ -622,14 +667,20 @@ void Renderer::resetPipeline()
 void Renderer::moveCam()
 {
     int elapsed = QDateTime::currentMSecsSinceEpoch() - lastFrame;
+    if (elapsed > 10)
+        elapsed = 10;
     cam.walk(camVelocity.z() / 500.0f * elapsed);
     cam.strafe(camVelocity.x() / 500.0f * elapsed);
     cam.fly(camVelocity.y() / 500.0f * elapsed);
     markViewProjDirty();
+    if(fabs(camVelocity.z()) > 0 || fabs(camVelocity.y()) > 0 || fabs(camVelocity.x()) > 0)
+        m_window->requestUpdate();
 }
 
 void Renderer::startNextFrame() 
 {
+    m_guiMutex.lock();
+
     ensureBuffers();
     ensureInstanceBuffer();
 
@@ -676,12 +727,14 @@ void Renderer::startNextFrame()
     m_devFuncs->vkCmdEndRenderPass(cmdBuf);
 
     lastFrame = QDateTime::currentMSecsSinceEpoch();
+    m_guiMutex.unlock();
     m_window->frameReady();
-    m_window->requestUpdate();
 }
 
 void Renderer::addObject(Object* _object)
 {
+    m_guiMutex.lock();
+
     if(object != nullptr)
         delete object;
     object = _object;
@@ -691,21 +744,29 @@ void Renderer::addObject(Object* _object)
     hasObject = true;
     m_inst = false;
     markViewProjDirty();
+    m_window->requestUpdate();
+    m_guiMutex.unlock();
 }
 
 void Renderer::setWireframe(bool _wireframe)
 {
-    if (wireframe == _wireframe)
-        return;
+    m_guiMutex.lock();
 
+    if (wireframe == _wireframe) {
+        m_guiMutex.unlock();
+        return;
+    }
     wireframe = _wireframe;
     m_inst = false;
     resetPipeline();
+    m_window->requestUpdate();
+    m_guiMutex.unlock();
 }
 
 void Renderer::setCamVelocity(const QVector3D& _vel)
 {
     camVelocity = _vel;
+    m_window->requestUpdate();
 }
 
 void Renderer::rotateCam(int dx, int dy)
@@ -714,6 +775,7 @@ void Renderer::rotateCam(int dx, int dy)
     cam.yaw(dx / 8.0f);
 
     markViewProjDirty();
+    m_window->requestUpdate();
 }
 
 void Renderer::rotateObject(int dx, int dy)
@@ -721,6 +783,7 @@ void Renderer::rotateObject(int dx, int dy)
     m_rotation_x += dx / 8.0f;
     m_rotation_y += dy / 8.0f;
     markViewProjDirty();
+    m_window->requestUpdate();
 }
 
 double* Renderer::getSlicingDir()
@@ -738,14 +801,21 @@ void Renderer::setSlicingDir(double x, double y, double z)
     m_slicingDir.setY(y);
     m_slicingDir.setZ(z);
     m_slicingDir.normalize();
+    m_window->requestUpdate();
 }
 
 void Renderer::setVisType(VisType visType)
 { 
-    if (m_visType == visType)
+    m_guiMutex.lock();
+
+    if (m_visType == visType && visType != VisType::ISOPHOTES) {
+        m_guiMutex.unlock();
         return;
+    }
     m_visType = visType;
     resetPipeline();
+    m_window->requestUpdate();
+    m_guiMutex.unlock();
 }
 
 void Renderer::swapOrthoView()
@@ -762,8 +832,8 @@ void Renderer::swapOrthoView()
         const QSize s = m_window->swapChainImageSize(); 
         m_proj.perspective(45.0f, s.width() / (float)s.height(), 0.01f, 1000.0f);
     }
-
     markViewProjDirty();
+    m_window->requestUpdate();
 }
 
 Renderer::~Renderer()

@@ -23,8 +23,8 @@ void Camera::yaw(float degrees)
     yawMatrix.rotate(m_yaw, 0, 1, 0);
 
     QMatrix4x4 rotMat = pitchMatrix * yawMatrix;
-    forward = (QVector4D(0.0f, 0.0f, -1.0f, 0.0f) * rotMat).toVector3D();
-    right = (QVector4D(1.0f, 0.0f, 0.0f, 0.0f) * rotMat).toVector3D();
+    forward = (QVector4D(0.0f, 0.0f, -1.0f, 0.0f) * rotMat).toVector3D().normalized();
+    right = (QVector4D(1.0f, 0.0f, 0.0f, 0.0f) * rotMat).toVector3D().normalized();
 }
 
 void Camera::pitch(float degrees)
@@ -35,8 +35,8 @@ void Camera::pitch(float degrees)
     pitchMatrix.rotate(m_pitch, 1, 0, 0);
 
     QMatrix4x4 rotMat = pitchMatrix * yawMatrix;
-    forward = (QVector4D(0.0f, 0.0f, -1.0f, 0.0f) * rotMat).toVector3D();
-    up = (QVector4D(0.0f, 1.0f, 0.0f, 0.0f) * rotMat).toVector3D();
+    forward = (QVector4D(0.0f, 0.0f, -1.0f, 0.0f) * rotMat).toVector3D().normalized();
+    up = (QVector4D(0.0f, 1.0f, 0.0f, 0.0f) * rotMat).toVector3D().normalized();
 }
 
 void Camera::walk(float amount)

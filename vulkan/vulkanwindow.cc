@@ -62,12 +62,12 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             renderer->setVisType(VisType::SLICING);
             break;
         case Qt::Key_I:
+            renderer->setEnvironmentOrtho(false);
             renderer->setVisType(VisType::ISOPHOTES);
-            //TODO ISOPHOTE TEXTURE
             break;
         case Qt::Key_E:
+            renderer->setEnvironmentOrtho(true);
             renderer->setVisType(VisType::ISOPHOTES);
-            //TODO ENVIORMENT TEXTURE
             break;
         case Qt::Key_C:
             //TODO SHOW CONTROL POINTS

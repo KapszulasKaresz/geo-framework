@@ -6,6 +6,7 @@
 #include "vulkan/camera.hh"
 #include "vulkan/shader.hh"
 #include "object.hh"
+#include "texture.hh"
 
 
 class Renderer : public QVulkanWindowRenderer {
@@ -31,6 +32,7 @@ public:
     void setVisType(VisType visType);
     QVector3D getCamForward() const { return cam.getForward(); }
     void swapOrthoView();
+    void setEnvironmentOrtho(bool value) { isEnvironment = value; }
 
     ~Renderer();
 private:
@@ -54,6 +56,10 @@ private:
     bool hasObject = false;
 
     bool isOrtho = false;
+
+    Texture m_sphereTexture;
+    bool isEnvironment = true;
+
 
     QVector3D m_slicingDir = QVector3D(1.0f, 0, 0);
     double m_slicingScaling = 1.0;
@@ -93,6 +99,8 @@ private:
     bool m_inst = false;
     bool wireframe = false;
     int m_vpDirty = 0;
+
+    QMutex m_guiMutex;
 
     int lastFrame = QDateTime::currentMSecsSinceEpoch();
 };
