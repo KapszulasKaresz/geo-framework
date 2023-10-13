@@ -7,6 +7,7 @@
 #include "vulkan/shader.hh"
 #include "object.hh"
 #include "texture.hh"
+#include "objectstore.hh"
 
 
 class Renderer : public QVulkanWindowRenderer {
@@ -36,6 +37,7 @@ public:
     void standardX() { cam.standardX(); }
     void standardY() { cam.standardY(); }
     void standardZ() { cam.standardZ(); }
+    void deleteObjects() { objects.clear(); }
 
     ~Renderer();
 private:
@@ -54,9 +56,9 @@ private:
     QVulkanWindow* m_window;
     QVulkanDeviceFunctions* m_devFuncs;
    
-    Object* object = nullptr;
+    ObjectStore objects;
 
-    bool hasObject = false;
+    bool hasObject = true;
 
     bool isOrtho = false;
 

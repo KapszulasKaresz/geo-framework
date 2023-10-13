@@ -402,7 +402,7 @@ void Renderer::releaseResources() {
 
 void Renderer::ensureBuffers()
 {
-    if (m_objectVertexBuf || !hasObject) {
+    if (m_objectVertexBuf) {
         return;
     }
 
@@ -413,7 +413,7 @@ void Renderer::ensureBuffers()
     VkBufferCreateInfo bufInfo;
     memset(&bufInfo, 0, sizeof(bufInfo));
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    const int meshByteCount = object->getVerticieCount() * 8 * sizeof(float);
+    const int meshByteCount = objects.getVerticieCount() * 8 * sizeof(float);
     bufInfo.size = meshByteCount;
     bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     VkResult err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_objectVertexBuf);
@@ -457,7 +457,7 @@ void Renderer::ensureBuffers()
     if (err != VK_SUCCESS)
         qFatal("Failed to map memory: %d", err);
 
-    float* vertexData = object->getVertexData();
+    float* vertexData = objects.getVertexData();
     memcpy(p, vertexData, meshByteCount);
     delete[] vertexData;
 
@@ -677,7 +677,7 @@ void Renderer::buildDrawCalls()
         m_devFuncs->vkUnmapMemory(dev, m_bufMem); 
     }
 
-    m_devFuncs->vkCmdDraw(cb, object->getVerticieCount(), 1, 0, 0);
+    m_devFuncs->vkCmdDraw(cb, objects.getVerticieCount(), 1, 0, 0);
 }
 
 void Renderer::resetPipeline()
@@ -756,22 +756,18 @@ void Renderer::addObject(Object* _object)
 {
     m_guiMutex.lock();
 
-    if (object != nullptr) {
-        delete object;
-        VkDevice dev = m_window->device();
-        m_devFuncs->vkDestroyBuffer(dev, m_objectVertexBuf, nullptr);
-        m_objectVertexBuf = VK_NULL_HANDLE;
-    }
-    object = _object;
+    objects.addObject(_object);
     hasObject = true;
     m_inst = false;
 
     double large = std::numeric_limits<double>::max(); 
     Vector box_min(large, large, large), box_max(-large, -large, -large); 
-    const auto& mesh = object->baseMesh(); 
-    for (auto v : object->baseMesh().vertices()) {
-        box_min.minimize(mesh.point(v)); 
-        box_max.maximize(mesh.point(v)); 
+    for (auto o : objects.getObjects()) {
+        const auto& mesh = o->baseMesh();
+        for (auto v : o->baseMesh().vertices()) {
+            box_min.minimize(mesh.point(v));
+            box_max.maximize(mesh.point(v));
+        }
     }
 
     QVector3D bl = QVector3D(box_min.data()[0], box_min.data()[1], box_min.data()[2]);
@@ -782,6 +778,8 @@ void Renderer::addObject(Object* _object)
     lightPos = tl * 10;
 
     markViewProjDirty();
+    m_devFuncs->vkDestroyBuffer(m_window->device(), m_objectVertexBuf, nullptr);
+    m_objectVertexBuf = VK_NULL_HANDLE;
     m_window->requestUpdate();
     m_guiMutex.unlock();
 }
@@ -892,5 +890,4 @@ void Renderer::swapOrthoView()
 
 Renderer::~Renderer()
 {
-    delete object;
 }

@@ -87,22 +87,22 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             renderer->standardZ();
             break;
         case Qt::Key_Up:
-            renderer->setCamVelocity(QVector3D(0, 0, 5));
+            renderer->setCamVelocity(QVector3D(0, 0, 1));
             break;
         case Qt::Key_Down:
-            renderer->setCamVelocity(QVector3D(0, 0, -5));
+            renderer->setCamVelocity(QVector3D(0, 0, -1));
             break;
         case Qt::Key_Left:
-            renderer->setCamVelocity(QVector3D(-5, 0, 0));
+            renderer->setCamVelocity(QVector3D(-1, 0, 0));
             break;
         case Qt::Key_Right:
-            renderer->setCamVelocity(QVector3D(5, 0, 0));
+            renderer->setCamVelocity(QVector3D(1, 0, 0));
             break;
         case Qt::Key_PageUp:
-            renderer->setCamVelocity(QVector3D(0, 5, 0));
+            renderer->setCamVelocity(QVector3D(0, 1, 0));
             break;
         case Qt::Key_PageDown:
-            renderer->setCamVelocity(QVector3D(0, -5, 0));
+            renderer->setCamVelocity(QVector3D(0, -1, 0));
             break;
         default:
             ;

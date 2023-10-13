@@ -24,7 +24,7 @@ public:
     void setSlicingDir(double x, double y, double z) { renderer->setSlicingDir(x, y, z); }
     double getSlicingScaling() const;
     void setSlicingScaling(double scaling) { renderer->setSlicingScaling(scaling); }
-    void deleteObjects(){}
+    void deleteObjects() { renderer->deleteObjects(); }
     bool open(std::string filename);
 
 signals:

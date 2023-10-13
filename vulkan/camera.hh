@@ -6,6 +6,7 @@ class Camera {
 	QVector3D forward, right, up, pos, bounding_bl, bounding_tr;
 	float m_yaw;
 	float m_pitch;
+	float scale = 1.0f;
 	QMatrix4x4 yawMatrix, pitchMatrix;
 
 public:

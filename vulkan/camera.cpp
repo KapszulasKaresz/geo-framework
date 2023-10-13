@@ -41,30 +41,31 @@ void Camera::pitch(float degrees)
 
 void Camera::walk(float amount)
 {
-    pos[0] += amount * forward.x();
-    pos[2] += amount * forward.z();
+    pos[0] += amount * forward.x() * scale;
+    pos[2] += amount * forward.z() * scale;
 }
 
 void Camera::strafe(float amount)
 {
-    pos[0] += amount * right.x();
-    pos[2] += amount * right.z();
+    pos[0] += amount * right.x() * scale;
+    pos[2] += amount * right.z() * scale;
 }
 
 void Camera::fly(float amount)
 {
-    pos[1] += amount * up.y();
+    pos[1] += amount * up.y() * scale;
 }
 
 void Camera::move(QVector3D amount)
 {
-    pos += amount;
+    pos += amount * scale;
 }
 
 void Camera::updateCameraBasedOnBoundingBox(const QVector3D& bottomrleft, const QVector3D& topright)
 {
     bounding_bl = bottomrleft;
     bounding_tr = topright;
+    scale = (bottomrleft - topright).length();
 
     pos = (bottomrleft + topright) / 2;
     pos.setZ(topright.z() + 2* topright.z());
