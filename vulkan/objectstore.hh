@@ -5,6 +5,7 @@
 class ObjectStore {
 	std::vector<Object*> objects;
 
+
 public:
 	std::vector<Object*>& getObjects() { return objects; }
 	void addObject(Object* object) { objects.push_back(object); }
