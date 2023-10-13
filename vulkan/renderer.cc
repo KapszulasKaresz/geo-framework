@@ -690,8 +690,6 @@ void Renderer::resetPipeline()
 void Renderer::moveCam()
 {
     int elapsed = QDateTime::currentMSecsSinceEpoch() - lastFrame;
-    if (elapsed > 10)
-        elapsed = 10;
     cam.walk(camVelocity.z() / 500.0f * elapsed);
     cam.strafe(camVelocity.x() / 500.0f * elapsed);
     cam.fly(camVelocity.y() / 500.0f * elapsed);
@@ -758,14 +756,31 @@ void Renderer::addObject(Object* _object)
 {
     m_guiMutex.lock();
 
-    if(object != nullptr)
+    if (object != nullptr) {
         delete object;
+        VkDevice dev = m_window->device();
+        m_devFuncs->vkDestroyBuffer(dev, m_objectVertexBuf, nullptr);
+        m_objectVertexBuf = VK_NULL_HANDLE;
+    }
     object = _object;
-    VkDevice dev = m_window->device();
-    m_devFuncs->vkDestroyBuffer(dev, m_objectVertexBuf, nullptr);
-    m_objectVertexBuf = VK_NULL_HANDLE;
     hasObject = true;
     m_inst = false;
+
+    double large = std::numeric_limits<double>::max(); 
+    Vector box_min(large, large, large), box_max(-large, -large, -large); 
+    const auto& mesh = object->baseMesh(); 
+    for (auto v : object->baseMesh().vertices()) {
+        box_min.minimize(mesh.point(v)); 
+        box_max.maximize(mesh.point(v)); 
+    }
+
+    QVector3D bl = QVector3D(box_min.data()[0], box_min.data()[1], box_min.data()[2]);
+    QVector3D tl = QVector3D(box_max.data()[0], box_max.data()[1], box_max.data()[2]);
+    
+    cam.updateCameraBasedOnBoundingBox(bl, tl);
+
+    lightPos = tl * 10;
+
     markViewProjDirty();
     m_window->requestUpdate();
     m_guiMutex.unlock();
@@ -789,6 +804,7 @@ void Renderer::setWireframe(bool _wireframe)
 void Renderer::setCamVelocity(const QVector3D& _vel)
 {
     camVelocity = _vel;
+    lastFrame = QDateTime::currentMSecsSinceEpoch();
     m_window->requestUpdate();
 }
 

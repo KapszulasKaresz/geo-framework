@@ -3,7 +3,7 @@
 #include <qmatrix4x4.h>
 
 class Camera {
-	QVector3D forward, right, up, pos;
+	QVector3D forward, right, up, pos, bounding_bl, bounding_tr;
 	float m_yaw;
 	float m_pitch;
 	QMatrix4x4 yawMatrix, pitchMatrix;
@@ -25,6 +25,11 @@ public:
 	void strafe(float amount);
 	void fly(float amount);
 	void move(QVector3D amount);
+	void setPos(QVector3D _pos) { pos = _pos; }
+	void updateCameraBasedOnBoundingBox(const QVector3D& bottomleft, const QVector3D& topright);
+	void standardX();
+	void standardY();
+	void standardZ();
 	QVector3D getForward() const { return forward; }
 
 	QMatrix4x4 viewMatrix() const;

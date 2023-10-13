@@ -33,6 +33,9 @@ public:
     QVector3D getCamForward() const { return cam.getForward(); }
     void swapOrthoView();
     void setEnvironmentOrtho(bool value) { isEnvironment = value; }
+    void standardX() { cam.standardX(); }
+    void standardY() { cam.standardY(); }
+    void standardZ() { cam.standardZ(); }
 
     ~Renderer();
 private:

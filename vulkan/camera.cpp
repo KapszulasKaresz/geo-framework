@@ -60,3 +60,50 @@ void Camera::move(QVector3D amount)
 {
     pos += amount;
 }
+
+void Camera::updateCameraBasedOnBoundingBox(const QVector3D& bottomrleft, const QVector3D& topright)
+{
+    bounding_bl = bottomrleft;
+    bounding_tr = topright;
+
+    pos = (bottomrleft + topright) / 2;
+    pos.setZ(topright.z() + 2* topright.z());
+
+    m_yaw = 0;
+    m_pitch = 0;
+    pitch(0);
+    yaw(0);
+}
+
+void Camera::standardX()
+{
+    pos = (bounding_bl + bounding_tr) / 2;
+    pos.setZ(bounding_tr.z() + 2 * bounding_tr.z());
+
+    m_yaw = 0;
+    m_pitch = 0;
+    pitch(0);
+    yaw(0);
+}
+
+void Camera::standardY()
+{
+    pos = (bounding_bl + bounding_tr) / 2;
+    pos.setY(bounding_tr.y() + 2 * bounding_tr.y());
+
+    m_yaw = 0;
+    m_pitch = 0;
+    pitch(90);
+    yaw(0);
+}
+
+void Camera::standardZ()
+{
+    pos = (bounding_bl + bounding_tr) / 2;
+    pos.setX(bounding_tr.x() + 2 * bounding_tr.x());
+
+    m_yaw = 0;
+    m_pitch = 0;
+    pitch(0);
+    yaw(270);
+}

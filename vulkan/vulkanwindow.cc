@@ -48,7 +48,6 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             //TODO UPDATE OBJECTS
             break;
         case Qt::Key_O:
-            //TODO ORTOGONAL PERSPECTIVE
             renderer->swapOrthoView();
             break;
         case Qt::Key_P:
@@ -79,13 +78,13 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             renderer->setWireframe(true);
             break;
         case Qt::Key_X:
-            //TODO X STANDARD POS
+            renderer->standardX();
             break;
         case Qt::Key_Y:
-            //TODO Y STANDARD POS
+            renderer->standardY();
             break;
         case Qt::Key_Z:
-            //TODO Z STANDARD POS;
+            renderer->standardZ();
             break;
         case Qt::Key_Up:
             renderer->setCamVelocity(QVector3D(0, 0, 5));
