@@ -5,6 +5,7 @@
 build
 debug
 release
+outside
 CMake*
 TAGS
 .vs*

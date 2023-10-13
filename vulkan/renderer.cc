@@ -510,7 +510,7 @@ void Renderer::ensureBuffers()
 
 void Renderer::ensureInstanceBuffer()
 {
-    if (m_inst || !hasObject) {
+    if (m_inst) {
         return;
     }
 
