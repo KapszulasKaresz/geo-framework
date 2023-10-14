@@ -8,7 +8,7 @@ public:
   explicit Object(std::string filename);
   virtual ~Object();
   const BaseMesh &baseMesh() const;
-  float* getVertexData() const;
+  float* getVertexData(double meanMin, double meanMax);
   int getVerticieCount() const;
   virtual void draw(const Visualization &vis) const;
   virtual void drawWithNames(const Visualization &vis) const = 0;
@@ -21,6 +21,7 @@ protected:
   void updateBaseMesh(bool own_normal, bool own_mean);
   virtual Vector normal(BaseMesh::VertexHandle vh) const;
   virtual double meanCurvature(BaseMesh::VertexHandle vh) const;
+  Vector colorMap(double min, double max, double d);
 
   BaseMesh mesh;
   std::string filename;

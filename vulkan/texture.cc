@@ -276,14 +276,21 @@ void Texture::reset(QVulkanInstance* inst, VkDevice dev)
 {
 	inst->deviceFunctions(dev)->vkDestroyImage(dev, textureImage, nullptr);
 	inst->deviceFunctions(dev)->vkFreeMemory(dev, textureImageMemory, nullptr);
+	textureImage = VK_NULL_HANDLE;
+	textureImageMemory = VK_NULL_HANDLE;
 
 	inst->deviceFunctions(dev)->vkDestroyImageView(dev, textureImageView, nullptr);
+	textureImageView = VK_NULL_HANDLE;
 
 	inst->deviceFunctions(dev)->vkDestroyImage(dev, textureImage, nullptr);
 	inst->deviceFunctions(dev)->vkFreeMemory(dev, textureImageMemory, nullptr);
+	textureImage = VK_NULL_HANDLE;
+	textureImageMemory = VK_NULL_HANDLE;
 	
 	inst->deviceFunctions(dev)->vkDestroySampler(dev, textureSampler, nullptr);
 	inst->deviceFunctions(dev)->vkDestroyImageView(dev, textureImageView, nullptr);
+	textureSampler = VK_NULL_HANDLE;
+	textureImageView = VK_NULL_HANDLE;
 }
 
 Texture::~Texture()

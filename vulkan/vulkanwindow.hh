@@ -14,12 +14,12 @@ public:
     QVulkanWindowRenderer* createRenderer() override;
 
 
-    double getCutoffRatio() const { return 0; }
-    void setCutoffRatio(double ratio) {}
-    double getMeanMin() const { return 0; }
-    void setMeanMin(double min){}
-    double getMeanMax() const { return 0; }
-    void setMeanMax(double max){}
+    double getCutoffRatio() const { return renderer->objects.getCutoffRatio(); }
+    void setCutoffRatio(double ratio) { renderer->objects.setCutoffRatio(ratio); renderer->update(); }
+    double getMeanMin() const { return renderer->objects.getMeanMin(); }
+    void setMeanMin(double min) { renderer->objects.setMeanMin(min); renderer->update();}
+    double getMeanMax() const { return renderer->objects.getMeanMax(); }
+    void setMeanMax(double max) { renderer->objects.setMeanMax(max); renderer->update();}
     const double* getSlicingDir() const;
     void setSlicingDir(double x, double y, double z) { renderer->setSlicingDir(x, y, z); }
     double getSlicingScaling() const;

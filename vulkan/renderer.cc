@@ -51,6 +51,9 @@ void Renderer::initResources() {
         m_sphereTexture.load(inst, dev, "environment.png");
         break;
     case VisType::MEAN:
+        if (!m_material.fs.isValid()) {
+            m_material.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/mean_frag.spv"));
+        }
         break;
     case VisType::SLICING:
         if (!m_material.fs.isValid()) {
@@ -92,7 +95,7 @@ void Renderer::createObjectPipeline()
     VkVertexInputBindingDescription vertexBindingDesc[] = {
         {
             0, // binding
-            8 * sizeof(float),
+            9 * sizeof(float),
             VK_VERTEX_INPUT_RATE_VERTEX
         },
         {
@@ -108,20 +111,26 @@ void Renderer::createObjectPipeline()
             VK_FORMAT_R32G32B32_SFLOAT,
             0 // offset
         },
-        { // normal
+        { // color
             1,
             0,
             VK_FORMAT_R32G32B32_SFLOAT,
-            5 * sizeof(float)
+            3 * sizeof(float)
+        },
+        { // normal
+            2,
+            0,
+            VK_FORMAT_R32G32B32_SFLOAT,
+            6 * sizeof(float)
         },
         { // instTranslate
-            2,
+            3,
             1,
             VK_FORMAT_R32G32B32_SFLOAT,
             0
         },
         { // instDiffuseAdjust
-            3,
+            4,
             1,
             VK_FORMAT_R32G32B32_SFLOAT,
             3 * sizeof(float)
@@ -406,6 +415,7 @@ void Renderer::ensureBuffers()
         return;
     }
 
+
     VkDevice dev = m_window->device();
     const int concurrentFrameCount = m_window->concurrentFrameCount();
 
@@ -413,7 +423,7 @@ void Renderer::ensureBuffers()
     VkBufferCreateInfo bufInfo;
     memset(&bufInfo, 0, sizeof(bufInfo));
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    const int meshByteCount = objects.getVerticieCount() * 8 * sizeof(float);
+    const int meshByteCount = objects.getVerticieCount() * 9 * sizeof(float);
     bufInfo.size = meshByteCount;
     bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
     VkResult err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_objectVertexBuf);
@@ -886,6 +896,16 @@ void Renderer::swapOrthoView()
     }
     markViewProjDirty();
     m_window->requestUpdate();
+}
+
+void Renderer::update()
+{
+    m_guiMutex.lock();
+    markViewProjDirty();
+    m_devFuncs->vkDestroyBuffer(m_window->device(), m_objectVertexBuf, nullptr);
+    m_objectVertexBuf = VK_NULL_HANDLE;
+    m_window->requestUpdate();
+    m_guiMutex.unlock();
 }
 
 Renderer::~Renderer()

@@ -6,16 +6,15 @@
 
 
 struct Texture {
-	QImage img;
 	VkDeviceSize imageSize;
-	VkImage textureImage;
-	VkDeviceMemory textureImageMemory;
+	VkImage textureImage = VK_NULL_HANDLE;
+	VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
 	
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
+	VkBuffer stagingBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory stagingBufferMemory = VK_NULL_HANDLE;
 
-	VkSampler textureSampler;
-	VkImageView textureImageView;
+	VkSampler textureSampler = VK_NULL_HANDLE;
+	VkImageView textureImageView = VK_NULL_HANDLE;
 
 	VkCommandPool commandpool;
 	QVulkanWindow* m_window;

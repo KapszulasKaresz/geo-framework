@@ -54,7 +54,6 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             renderer->setVisType(VisType::PLAIN);
             break;
         case Qt::Key_M:
-            //TODO
             renderer->setVisType(VisType::MEAN); 
             break;
         case Qt::Key_L:

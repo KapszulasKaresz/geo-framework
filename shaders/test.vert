@@ -1,12 +1,13 @@
 #version 440
 
 layout(location = 0) in vec4 position;
-layout(location = 1) in vec3 normal;
+layout(location = 1) in vec3 color;
+layout(location = 2) in vec3 normal;
 
 // Instanced attributes to variate the translation of the model and the diffuse
 // color of the material.
-layout(location = 2) in vec3 instTranslate;
-layout(location = 3) in vec3 instDiffuseAdjust;
+layout(location = 3) in vec3 instTranslate;
+layout(location = 4) in vec3 instDiffuseAdjust;
 
 out gl_PerVertex { vec4 gl_Position; };
 layout(location = 0) out vec3 vECVertNormal;
@@ -27,6 +28,6 @@ void main()
                   0, 0, 1, 0,
                   instTranslate.x, instTranslate.y, instTranslate.z, 1);
     vECVertPos = vec3(t * ubuf.model * position);
-    vDiffuseAdjust = instDiffuseAdjust;
+    vDiffuseAdjust = color;
     gl_Position = ubuf.vp * t * ubuf.model * position;
 }

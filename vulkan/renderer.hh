@@ -29,7 +29,7 @@ public:
     double* getSlicingDir();
     double getSlicingScaling() const { return m_slicingScaling; }
     void setSlicingDir(double x, double y, double z);
-    void setSlicingScaling(double scaling) { m_slicingScaling = scaling; }
+    void setSlicingScaling(double scaling) { m_slicingScaling = scaling;}
     void setVisType(VisType visType);
     QVector3D getCamForward() const { return cam.getForward(); }
     void swapOrthoView();
@@ -38,8 +38,11 @@ public:
     void standardY() { cam.standardY(); }
     void standardZ() { cam.standardZ(); }
     void deleteObjects() { objects.clear(); }
+    void update();
 
     ~Renderer();
+
+    ObjectStore objects;
 private:
 
     void createObjectPipeline();
@@ -55,8 +58,6 @@ private:
 
     QVulkanWindow* m_window;
     QVulkanDeviceFunctions* m_devFuncs;
-   
-    ObjectStore objects;
 
     bool hasObject = true;
 

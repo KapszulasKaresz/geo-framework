@@ -4,6 +4,29 @@
 #include "jet-wrapper.hh"
 #endif
 
+static Vector HSV2RGB(Vector hsv) {
+    // As in Wikipedia
+    double c = hsv[2] * hsv[1];
+    double h = hsv[0] / 60;
+    double x = c * (1 - std::abs(std::fmod(h, 2) - 1));
+    double m = hsv[2] - c;
+    Vector rgb(m, m, m);
+    if (h <= 1)
+        return rgb + Vector(c, x, 0);
+    if (h <= 2)
+        return rgb + Vector(x, c, 0);
+    if (h <= 3)
+        return rgb + Vector(0, c, x);
+    if (h <= 4)
+        return rgb + Vector(0, x, c);
+    if (h <= 5)
+        return rgb + Vector(x, 0, c);
+    if (h <= 6)
+        return rgb + Vector(c, 0, x);
+    return rgb;
+}
+
+
 Object::Object(std::string filename) : filename(filename) {
 }
 
@@ -14,21 +37,22 @@ const BaseMesh &Object::baseMesh() const {
   return mesh;
 }
 
-float* Object::getVertexData() const
+float* Object::getVertexData(double meanMin, double meanMax) 
 {
-    float* ret = new float[getVerticieCount() * 8];
+    float* ret = new float[getVerticieCount() * 9];
     int i = 0;
     for (auto f : mesh.faces()) {
         for (auto v : f.vertices()) {
             ret[i] = mesh.point(v).data()[0];
             ret[i + 1] = mesh.point(v).data()[1];
             ret[i + 2] = mesh.point(v).data()[2];
-            ret[i + 3] = 0;
-            ret[i + 4] = 0;
-            ret[i + 5] = mesh.normal(v).data()[0];
-            ret[i + 6] = mesh.normal(v).data()[1];
-            ret[i + 7] = mesh.normal(v).data()[2];
-            i += 8;
+            ret[i + 3] = colorMap(meanMin, meanMax, mesh.data(v).mean).data()[0];
+            ret[i + 4] = colorMap(meanMin, meanMax, mesh.data(v).mean).data()[1];
+            ret[i + 5] = colorMap(meanMin, meanMax, mesh.data(v).mean).data()[2];
+            ret[i + 6] = mesh.normal(v).data()[0];
+            ret[i + 7] = mesh.normal(v).data()[1];
+            ret[i + 8] = mesh.normal(v).data()[2];
+            i += 9;
         }
     }
 
@@ -187,6 +211,17 @@ double Object::meanCurvature(BaseMesh::VertexHandle vh) const {
     mean += angle * vec.norm();
   }
   return mean / (4 * vertex_area);
+}
+
+Vector Object::colorMap(double min, double max, double d)
+{
+    double red = 0, green = 120, blue = 240; // Hue
+    if (d < 0) {
+        double alpha = min ? std::min(d / min, 1.0) : 1.0;
+        return HSV2RGB({ green * (1 - alpha) + blue * alpha, 1, 1 });
+    }
+    double alpha = max ? std::min(d / max, 1.0) : 1.0;
+    return HSV2RGB({ green * (1 - alpha) + red * alpha, 1, 1 });
 }
 
 bool Object::valid() const {
