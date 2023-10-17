@@ -265,7 +265,7 @@ void Renderer::createObjectPipeline()
     memset(&rs, 0, sizeof(rs));
     rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rs.polygonMode = wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
-    rs.cullMode =  VK_CULL_MODE_NONE;
+    rs.cullMode =  VK_CULL_MODE_NONE;   
     rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rs.lineWidth = 1.0f;
     pipelineInfo.pRasterizationState = &rs;
