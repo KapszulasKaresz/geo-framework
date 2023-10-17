@@ -118,7 +118,6 @@ void Window::setCutoff() {
 
   if(dlg->exec() == QDialog::Accepted) {
     viewer->setCutoffRatio(sb->value());
-    wrapper->update();
   }
 }
 
@@ -156,7 +155,6 @@ void Window::setRange() {
   if(dlg.exec() == QDialog::Accepted) {
     viewer->setMeanMin(sb1->value());
     viewer->setMeanMax(sb2->value());
-    wrapper->update();
   }
 }
 

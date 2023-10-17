@@ -36,7 +36,11 @@ void main()
     vec3 green = vec3(0,1,0);
     vec3 color = vec3(1);
     
-    vec3 color = texture(texSampler, vec2(0.2,0.2)).rgb;
+     if(floor(dot(vECVertPos, ubuf.slicingDir) / ubuf.slicingScaling) - (2* floor(floor(dot(vECVertPos, ubuf.slicingDir) / ubuf.slicingScaling / 2))) == 0) {
+        color = white;
+    } else {
+        color = green;
+    }
 
     vec3 dColor = att * ubuf.intensity * color * NL;
 
