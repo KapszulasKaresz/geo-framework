@@ -22,12 +22,10 @@ private slots:
   void startComputation(QString message);
   void midComputation(int percent);
   void endComputation();
-
 private:
   QApplication *parent;
   VulkanWindow *viewer;
   QVulkanInstance inst;
-  QWidget* wrapper;
   QProgressBar *progress;
   QString last_directory;
 };

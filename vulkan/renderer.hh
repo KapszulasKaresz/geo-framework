@@ -43,6 +43,7 @@ public:
     ~Renderer();
 
     ObjectStore objects;
+    Camera cam;
 private:
 
     void createObjectPipeline();
@@ -72,7 +73,6 @@ private:
 
     VisType m_visType = VisType::PLAIN;
 
-    Camera cam;
     QVector3D camVelocity = QVector3D(0,0,0);
     QVector3D lightPos;
 

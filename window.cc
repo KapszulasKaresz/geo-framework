@@ -21,7 +21,7 @@ Window::Window(QApplication *parent) :
   viewer = new VulkanWindow();
   viewer->setVulkanInstance(&inst);
  
-  wrapper = QWidget::createWindowContainer(viewer, this);
+  auto wrapper = QWidget::createWindowContainer(viewer, this);
 
 
   connect(viewer, &VulkanWindow::startComputation, this, &Window::startComputation);

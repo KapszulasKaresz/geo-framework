@@ -2,6 +2,7 @@
 
 #include "base-mesh.hh"
 #include "visualization.hh"
+#include "qvector3d.h"
 
 class Object {
 public:
@@ -16,6 +17,8 @@ public:
   virtual void movement(int selected, const Vector &pos) = 0;
   virtual void updateBaseMesh();
   virtual bool reload() = 0;
+  virtual int controlPoints();
+  virtual void getClosest(int& id, float& distance, QVector3D from, QVector3D dir) = 0;
   bool valid() const;
 protected:
   void updateBaseMesh(bool own_normal, bool own_mean);

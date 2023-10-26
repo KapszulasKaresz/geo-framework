@@ -310,17 +310,17 @@ void Viewer::mouseMoveEvent(QMouseEvent *e) {
     return QGLViewer::mouseMoveEvent(e);
 
   using qglviewer::Vec;
-  if (e->modifiers() & Qt::ControlModifier) {
+  if (e->modifiers() & Qt::ControlModifier) { 
     // move in screen plane
-    double depth = camera()->projectedCoordinatesOf(Vec(axes.position))[2];
-    auto pos = camera()->unprojectedCoordinatesOf(Vec(e->pos().x(), e->pos().y(), depth));
-    axes.position = toVector(pos);
+    double depth = camera()->projectedCoordinatesOf(Vec(axes.position))[2]; 
+    auto pos = camera()->unprojectedCoordinatesOf(Vec(e->pos().x(), e->pos().y(), depth)); 
+    axes.position = toVector(pos); 
   } else {
-    Vec from, dir, axis(axes.selected_axis == 0, axes.selected_axis == 1, axes.selected_axis == 2);
-    camera()->convertClickToLine(e->pos(), from, dir);
-    auto p = intersectLines(axes.grabbed_pos, toVector(axis), toVector(from), toVector(dir));
-    float d = (p - axes.grabbed_pos) | toVector(axis);
-    axes.position[axes.selected_axis] = axes.original_pos[axes.selected_axis] + d;
+    Vec from, dir, axis(axes.selected_axis == 0, axes.selected_axis == 1, axes.selected_axis == 2); 
+    camera()->convertClickToLine(e->pos(), from, dir); 
+    auto p = intersectLines(axes.grabbed_pos, toVector(axis), toVector(from), toVector(dir)); 
+    float d = (p - axes.grabbed_pos) | toVector(axis); 
+    axes.position[axes.selected_axis] = axes.original_pos[axes.selected_axis] + d; 
   }
 
   objects[selected_object]->movement(selected_vertex, axes.position);

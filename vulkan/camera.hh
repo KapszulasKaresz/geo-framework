@@ -27,10 +27,12 @@ public:
 	void fly(float amount);
 	void move(QVector3D amount);
 	void setPos(QVector3D _pos) { pos = _pos; }
+	QVector3D getPos() { return pos; }
 	void updateCameraBasedOnBoundingBox(const QVector3D& bottomleft, const QVector3D& topright);
 	void standardX();
 	void standardY();
 	void standardZ();
+	QVector3D getRayDir(int X, int Y, QSize ScreenSize);
 	QVector3D getForward() const { return forward; }
 
 	QMatrix4x4 viewMatrix() const;

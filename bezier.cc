@@ -49,6 +49,27 @@ void Bezier::drawWithNames(const Visualization &vis) const {
   }
 }
 
+void Bezier::getClosest(int& id, float& distance, QVector3D from, QVector3D dir)
+{
+    float minDist = std::numeric_limits<float>::max();
+    int idx = -1;
+    int ida = 0;
+
+
+    for (auto v : control_points) {
+        QVector3D point = QVector3D(v.data()[0], v.data()[1], v.data()[2]);
+        float dist = point.distanceToLine(from, dir);
+        if (dist < minDist) {
+            minDist = dist;
+            idx = ida;
+        }
+        ida++;
+    }
+
+    distance = minDist;
+    id = idx;
+}
+
 Vector Bezier::postSelection(int selected) {
   return control_points[selected];
 }

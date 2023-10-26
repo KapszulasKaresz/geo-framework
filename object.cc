@@ -37,7 +37,7 @@ const BaseMesh &Object::baseMesh() const {
   return mesh;
 }
 
-float* Object::getVertexData(double meanMin, double meanMax) 
+float* Object::getVertexData(double meanMin, double meanMax)
 {
     float* ret = new float[getVerticieCount() * 9];
     int i = 0;
@@ -125,6 +125,11 @@ void Object::draw(const Visualization &vis) const {
 
 void Object::updateBaseMesh() {
   updateBaseMesh(false, false);
+}
+
+int Object::controlPoints()
+{
+    return 0;
 }
 
 void Object::updateBaseMesh(bool own_normal, bool own_mean) {

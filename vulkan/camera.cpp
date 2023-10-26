@@ -108,3 +108,10 @@ void Camera::standardZ()
     pitch(0);
     yaw(270);
 }
+
+QVector3D Camera::getRayDir(int X, int Y, QSize ScreenSize)
+{
+    QVector3D r = right.normalized() * 2 * tanf(45.0f / 2.0f);
+    QVector3D u = QVector3D::crossProduct(forward, r).normalized() * 2 * tanf(45.0f / 2.0f);
+    return forward + r * (2.0f * (X + 0.5f) / ScreenSize.width() - 1) + u * (2.0f * (Y + 0.5f) / ScreenSize.height() - 1);
+}

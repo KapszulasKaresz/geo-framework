@@ -481,7 +481,7 @@ void Renderer::ensureBuffers()
 
     VkDescriptorBufferInfo vertUni = { m_uniBuf, 0, m_material.vertUniSize };
     VkDescriptorBufferInfo fragUni = { m_uniBuf, m_material.vertUniSize, m_material.fragUniSize };
-    VkDescriptorBufferInfo textureBuf = { m_sphereTexture.stagingBuffer ,0 , aligned(m_sphereTexture.imageSize, uniAlign)};
+    VkDescriptorBufferInfo textureBuf = { m_sphereTexture.stagingBuffer ,m_material.vertUniSize + m_material.fragUniSize , aligned(m_sphereTexture.imageSize, uniAlign)};
 
     VkDescriptorImageInfo imageInfo;
     memset(&imageInfo, 0, sizeof(imageInfo));
@@ -574,8 +574,8 @@ void Renderer::ensureInstanceBuffer()
 void Renderer::getMatrices(QMatrix4x4* vp, QMatrix4x4* model, QMatrix3x3* modelNormal, QVector3D* eyePos)
 {
     model->setToIdentity();
-    model->rotate(m_rotation_x, 0, 1, 0);
-    model->rotate(m_rotation_y, 1, 0, 0);
+    model->rotate(m_rotation_x, 1, 0, 1);
+    model->rotate(m_rotation_y, 1, 1, 0);
     *modelNormal = model->normalMatrix();
     QMatrix4x4 view = cam.viewMatrix();
     *vp = m_proj * view;

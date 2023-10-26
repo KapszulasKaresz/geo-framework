@@ -68,7 +68,8 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             renderer->setVisType(VisType::ISOPHOTES);
             break;
         case Qt::Key_C:
-            //TODO SHOW CONTROL POINTS
+            renderer->objects.swapControlPoints();
+            renderer->update();
             break;
         case Qt::Key_S:
             renderer->setWireframe(false);
@@ -103,6 +104,15 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
         case Qt::Key_PageDown:
             renderer->setCamVelocity(QVector3D(0, -1, 0));
             break;
+        case Qt::Key_1:
+            renderer->objects.setMovementAxis(QVector3D(1, 0, 0));
+            break;
+        case Qt::Key_2:
+            renderer->objects.setMovementAxis(QVector3D(0, 1, 0));
+            break;
+        case Qt::Key_3:
+            renderer->objects.setMovementAxis(QVector3D(0, 0, 1));
+            break;
         default:
             ;
         }
@@ -129,6 +139,14 @@ void VulkanWindow::keyReleaseEvent(QKeyEvent* e)
 
 void VulkanWindow::mouseMoveEvent(QMouseEvent* e)
 {
+    if (m_ispressed && (e->modifiers() & Qt::ControlModifier)) {
+        QVector3D from = renderer->cam.getPos();
+        QVector3D dir = renderer->cam.getRayDir(e->pos().x(), e->pos().y(), this->size());
+        renderer->objects.moveSelected(from, dir);
+        renderer->update();
+        return;
+    }
+
     if (!m_ispressed)
         return;
 
@@ -142,8 +160,13 @@ void VulkanWindow::mouseMoveEvent(QMouseEvent* e)
 
 void VulkanWindow::mousePressEvent(QMouseEvent* e)
 {
-    m_ispressed = true;
     m_lastpos = e->position().toPoint();
+    if (!m_ispressed && (e->modifiers() & Qt::ControlModifier)) {
+        QVector3D from = renderer->cam.getPos();
+        QVector3D dir = renderer->cam.getRayDir(e->pos().x(), e->pos().y(), this->size());
+        renderer->objects.updateSelected(from, dir);
+    }
+    m_ispressed = true;
 }
 
 void VulkanWindow::mouseReleaseEvent(QMouseEvent* e)
