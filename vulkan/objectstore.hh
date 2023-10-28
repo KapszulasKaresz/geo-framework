@@ -8,8 +8,7 @@ class ObjectStore {
 	std::vector<Object*> objects;
 	std::vector<Mesh*> controlPoints;
 
-
-	bool showControlPoints = false;
+	Mesh* ControlPoint = new Mesh("D:/Temalabor/models/cube.obj");
 
 	float meanMin;
 	float meanMax;
@@ -25,6 +24,8 @@ public:
 	void addObject(Object* object);
 	void clear() { objects.clear(); controlPoints.clear(); }
 	int getVerticieCount();
+	int getVerticieCountCP();
+	float* getVertexDataCP();
 	float* getVertexData();
 	void updateMeanMinMax();
 	void updateMesh();
@@ -36,10 +37,10 @@ public:
 	void setMeanMin(double min) { meanMin = min; updateMesh(); }
 	double getMeanMax() const { return meanMax; }
 	void setMeanMax(double max) { meanMax = max; updateMesh(); }
-	void swapControlPoints() { showControlPoints = !showControlPoints; }
 	void setMovementAxis(QVector3D axis) { movementAxis = axis; }
 	~ObjectStore() { clear(); }
 
 private:
 	void updatePoints();
+	QVector3D getNegatedAxis();
 };

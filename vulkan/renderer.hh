@@ -39,6 +39,7 @@ public:
     void standardZ() { cam.standardZ(); }
     void deleteObjects() { objects.clear(); }
     void update();
+    void swapControlPointsShow() { ShowControlPoints = !ShowControlPoints; }
 
     ~Renderer();
 
@@ -47,15 +48,19 @@ public:
 private:
 
     void createObjectPipeline();
+    void createControlPointPipeline();
     void ensureBuffers();
     void ensureInstanceBuffer();
     void getMatrices(QMatrix4x4* vp, QMatrix4x4* model, QMatrix3x3* modelNormal, QVector3D* eyePos);
     void writeFragUni(quint8* p, const QVector3D& eyePos);
     void buildDrawCalls();
+    void buildDrawCallsControlPoints();
     void resetPipeline();
     void markViewProjDirty() { m_vpDirty = m_window->concurrentFrameCount(); }
     void moveCam();
 
+
+    bool ShowControlPoints = false;
 
     QVulkanWindow* m_window;
     QVulkanDeviceFunctions* m_devFuncs;
@@ -93,6 +98,15 @@ private:
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         VkPipeline pipeline = VK_NULL_HANDLE;
     } m_material;
+
+    VkBuffer m_ControlPointVertexBuf = VK_NULL_HANDLE;
+
+    struct {
+        Shader vs;
+        Shader fs;
+        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+        VkPipeline pipeline = VK_NULL_HANDLE;
+    } m_controlPoint;
 
     VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
     

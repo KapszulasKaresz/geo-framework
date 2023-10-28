@@ -25,14 +25,39 @@ int ObjectStore::getVerticieCount()
 		ret += object->getVerticieCount();
 	}
 
-	if (showControlPoints) {
-		for (auto point : controlPoints) {
-			ret += point->getVerticieCount();
+	return ret;
+}
+
+int ObjectStore::getVerticieCountCP()
+{
+	int ret = 0;
+
+	for (auto point : controlPoints) {
+		ret += point->getVerticieCount();
+	}
+	
+	return ret;
+}
+
+float* ObjectStore::getVertexDataCP()
+{
+
+	float* ret = new float[getVerticieCount() * 3];
+	int i = 0;
+
+	for (int k = 0; k < controlPoints.size(); k++) {
+		float* copy = controlPoints[k]->getVertexData(meanMin, meanMax);
+		for (int j = 0; j < (controlPoints[k]->getVerticieCount() * 9); j+=9) {
+			ret[i++] = copy[j];
+			ret[i++] = copy[j + 1];
+			ret[i++] = copy[j + 2];
 		}
+		delete copy;
 	}
 
 	return ret;
 }
+
 
 float* ObjectStore::getVertexData()
 {
@@ -48,15 +73,6 @@ float* ObjectStore::getVertexData()
 		delete copy;
 	}
 
-	if (showControlPoints) {
-		for (int k = 0; k < controlPoints.size(); k++) {
-			float* copy = controlPoints[k]->getVertexData(meanMin, meanMax);
-			for (int j = 0; j < (controlPoints[k]->getVerticieCount() * 9); j++) {
-				ret[i++] = copy[j];
-			}
-			delete copy;
-		}
-	}
 
 	return ret;
 }
@@ -101,6 +117,10 @@ void ObjectStore::updateSelected(QVector3D from, QVector3D dir)
 			selectedVertexID = id;
 		}
 	}
+}
+
+QVector3D ObjectStore::getNegatedAxis() {
+	return QVector3D(movementAxis.x() > 0 ? 0:1, movementAxis.y() > 0 ? 0:1, movementAxis.z() > 0? 0:1);
 }
 
 void ObjectStore::moveSelected(QVector3D from, QVector3D dir)

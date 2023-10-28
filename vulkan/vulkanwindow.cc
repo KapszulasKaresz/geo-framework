@@ -68,8 +68,7 @@ void VulkanWindow::keyPressEvent(QKeyEvent* e)
             renderer->setVisType(VisType::ISOPHOTES);
             break;
         case Qt::Key_C:
-            renderer->objects.swapControlPoints();
-            renderer->update();
+            renderer->swapControlPointsShow();
             break;
         case Qt::Key_S:
             renderer->setWireframe(false);

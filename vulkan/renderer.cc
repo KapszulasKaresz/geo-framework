@@ -38,6 +38,15 @@ void Renderer::initResources() {
     m_sphereTexture.commandpool = m_window->graphicsCommandPool();
     m_sphereTexture.m_window = m_window;
 
+    if (!m_controlPoint.vs.isValid()) {
+        m_controlPoint.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/controlPoint_vert.spv"));
+    }
+
+    if (!m_controlPoint.fs.isValid()) {
+        m_controlPoint.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/controlPoint_frag.spv"));
+    }
+
+
     if (!m_material.vs.isValid()) {
         m_material.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/test_vert.spv"));
     }
@@ -85,6 +94,7 @@ void Renderer::initResources() {
     }
 
     createObjectPipeline();
+    createControlPointPipeline();
 }
 
 void Renderer::createObjectPipeline()
@@ -310,6 +320,146 @@ void Renderer::createObjectPipeline()
         qFatal("Failed to create graphics pipeline: %d", err);
 }
 
+void Renderer::createControlPointPipeline()
+{
+    VkDevice dev = m_window->device();
+
+    // Vertex layout.
+    VkVertexInputBindingDescription vertexBindingDesc = {
+        0, // binding
+        3 * sizeof(float),
+        VK_VERTEX_INPUT_RATE_VERTEX
+    };
+    VkVertexInputAttributeDescription vertexAttrDesc[] = {
+        { // position
+            0, // location
+            0, // binding
+            VK_FORMAT_R32G32B32_SFLOAT,
+            0 // offset
+        },
+    };
+
+    VkPipelineVertexInputStateCreateInfo vertexInputInfo;
+    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertexInputInfo.pNext = nullptr;
+    vertexInputInfo.flags = 0;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &vertexBindingDesc;
+    vertexInputInfo.vertexAttributeDescriptionCount = sizeof(vertexAttrDesc) / sizeof(vertexAttrDesc[0]);
+    vertexInputInfo.pVertexAttributeDescriptions = vertexAttrDesc;
+
+    // Do not bother with uniform buffers and descriptors, all the data fits
+    // into the spec mandated minimum of 128 bytes for push constants.
+    VkPushConstantRange pcr[] = {
+        // mvp
+        {
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0,
+            64
+        },
+    };
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo;
+    memset(&pipelineLayoutInfo, 0, sizeof(pipelineLayoutInfo));
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.pushConstantRangeCount = sizeof(pcr) / sizeof(pcr[0]);
+    pipelineLayoutInfo.pPushConstantRanges = pcr;
+
+    VkResult err = m_devFuncs->vkCreatePipelineLayout(dev, &pipelineLayoutInfo, nullptr, &m_controlPoint.pipelineLayout);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to create pipeline layout: %d", err);
+
+    VkGraphicsPipelineCreateInfo pipelineInfo;
+    memset(&pipelineInfo, 0, sizeof(pipelineInfo));
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+
+    VkPipelineShaderStageCreateInfo shaderStages[2] = {
+        {
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            nullptr,
+            0,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            m_controlPoint.vs.data()->shaderModule,
+            "main",
+            nullptr
+        },
+        {
+            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            nullptr,
+            0,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
+            m_controlPoint.fs.data()->shaderModule,
+            "main",
+            nullptr
+        }
+    };
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
+
+    pipelineInfo.pVertexInputState = &vertexInputInfo;
+
+    VkPipelineInputAssemblyStateCreateInfo ia;
+    memset(&ia, 0, sizeof(ia));
+    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    pipelineInfo.pInputAssemblyState = &ia;
+
+    VkPipelineViewportStateCreateInfo vp;
+    memset(&vp, 0, sizeof(vp));
+    vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    vp.viewportCount = 1;
+    vp.scissorCount = 1;
+    pipelineInfo.pViewportState = &vp;
+
+    VkPipelineRasterizationStateCreateInfo rs;
+    memset(&rs, 0, sizeof(rs));
+    rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rs.polygonMode = VK_POLYGON_MODE_FILL;
+    rs.cullMode = VK_CULL_MODE_BACK_BIT;
+    rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rs.lineWidth = 1.0f;
+    pipelineInfo.pRasterizationState = &rs;
+
+    VkPipelineMultisampleStateCreateInfo ms;
+    memset(&ms, 0, sizeof(ms));
+    ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    ms.rasterizationSamples = m_window->sampleCountFlagBits();
+    pipelineInfo.pMultisampleState = &ms;
+
+    VkPipelineDepthStencilStateCreateInfo ds;
+    memset(&ds, 0, sizeof(ds));
+    ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    ds.depthTestEnable = VK_TRUE;
+    ds.depthWriteEnable = VK_TRUE;
+    ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+    pipelineInfo.pDepthStencilState = &ds;
+
+    VkPipelineColorBlendStateCreateInfo cb;
+    memset(&cb, 0, sizeof(cb));
+    cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    VkPipelineColorBlendAttachmentState att;
+    memset(&att, 0, sizeof(att));
+    att.colorWriteMask = 0xF;
+    cb.attachmentCount = 1;
+    cb.pAttachments = &att;
+    pipelineInfo.pColorBlendState = &cb;
+
+    VkDynamicState dynEnable[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    VkPipelineDynamicStateCreateInfo dyn;
+    memset(&dyn, 0, sizeof(dyn));
+    dyn.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dyn.dynamicStateCount = sizeof(dynEnable) / sizeof(VkDynamicState);
+    dyn.pDynamicStates = dynEnable;
+    pipelineInfo.pDynamicState = &dyn;
+
+    pipelineInfo.layout = m_controlPoint.pipelineLayout;
+    pipelineInfo.renderPass = m_window->defaultRenderPass();
+
+    err = m_devFuncs->vkCreateGraphicsPipelines(dev, m_pipelineCache, 1, &pipelineInfo, nullptr, &m_controlPoint.pipeline);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to create graphics pipeline: %d", err);
+}
+
 void Renderer::initSwapChainResources() {
     qDebug("initSwapChainResources");
     if (isOrtho) {
@@ -362,6 +512,11 @@ void Renderer::releaseResources() {
         m_material.pipelineLayout = VK_NULL_HANDLE;
     }
 
+    if (m_controlPoint.pipelineLayout) {
+        m_devFuncs->vkDestroyPipelineLayout(dev, m_controlPoint.pipelineLayout, nullptr);
+        m_controlPoint.pipelineLayout = VK_NULL_HANDLE;
+    }
+
     if (m_pipelineCache) {
         m_devFuncs->vkDestroyPipelineCache(dev, m_pipelineCache, nullptr);
         m_pipelineCache = VK_NULL_HANDLE;
@@ -371,6 +526,11 @@ void Renderer::releaseResources() {
         m_devFuncs->vkDestroyPipeline(dev, m_material.pipeline, nullptr);
         m_material.pipeline = VK_NULL_HANDLE;
     }
+    
+    if (m_controlPoint.pipeline) {
+        m_devFuncs->vkDestroyPipeline(dev, m_controlPoint.pipeline, nullptr);
+        m_controlPoint.pipeline = VK_NULL_HANDLE;
+    }
 
     if (m_material.vs.isValid()) {
         m_devFuncs->vkDestroyShaderModule(dev, m_material.vs.data()->shaderModule, nullptr);
@@ -379,6 +539,15 @@ void Renderer::releaseResources() {
     if (m_material.fs.isValid()) {
         m_devFuncs->vkDestroyShaderModule(dev, m_material.fs.data()->shaderModule, nullptr);
         m_material.fs.reset();
+    }
+
+    if (m_controlPoint.vs.isValid()) {
+        m_devFuncs->vkDestroyShaderModule(dev, m_controlPoint.vs.data()->shaderModule, nullptr);
+        m_controlPoint.vs.reset();
+    }
+    if (m_controlPoint.fs.isValid()) {
+        m_devFuncs->vkDestroyShaderModule(dev, m_controlPoint.fs.data()->shaderModule, nullptr);
+        m_controlPoint.fs.reset();
     }
 
     if (m_objectVertexBuf) {
@@ -405,6 +574,8 @@ void Renderer::releaseResources() {
         m_devFuncs->vkFreeMemory(dev, m_instBufMem, nullptr);
         m_instBufMem = VK_NULL_HANDLE;
     }
+
+
     QVulkanInstance* inst = m_window->vulkanInstance();
     m_sphereTexture.reset(inst, dev);
 }
@@ -419,7 +590,7 @@ void Renderer::ensureBuffers()
     VkDevice dev = m_window->device();
     const int concurrentFrameCount = m_window->concurrentFrameCount();
 
-
+    //Vertex Buffer for the items
     VkBufferCreateInfo bufInfo;
     memset(&bufInfo, 0, sizeof(bufInfo));
     bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -433,6 +604,20 @@ void Renderer::ensureBuffers()
     VkMemoryRequirements objectVertMemReq;
     m_devFuncs->vkGetBufferMemoryRequirements(dev, m_objectVertexBuf, &objectVertMemReq);
 
+
+    //Vertex Buffer for the controlPoints
+    memset(&bufInfo, 0, sizeof(bufInfo));
+    bufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO; 
+    const int ControlPointMeshByteCount = objects.getVerticieCountCP() * 3 * sizeof(float); 
+    bufInfo.size = ControlPointMeshByteCount;
+    bufInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT; 
+    err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_ControlPointVertexBuf); 
+    if (err != VK_SUCCESS)
+        qFatal("Failed to create vertex buffer: %d", err);
+
+    VkMemoryRequirements cpVertMemReq; 
+    m_devFuncs->vkGetBufferMemoryRequirements(dev, m_ControlPointVertexBuf, &cpVertMemReq);
+
     bufInfo.size = (m_material.fragUniSize + m_material.vertUniSize) * concurrentFrameCount;
     bufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_uniBuf);
@@ -442,7 +627,8 @@ void Renderer::ensureBuffers()
     VkMemoryRequirements uniMemReq;
     m_devFuncs->vkGetBufferMemoryRequirements(dev, m_uniBuf, &uniMemReq);
 
-    m_material.uniMemStartOffset = aligned(0 + objectVertMemReq.size, uniMemReq.alignment);
+    VkDeviceSize cpVertStartOffset = aligned(0 + objectVertMemReq.size, cpVertMemReq.alignment);
+    m_material.uniMemStartOffset = aligned(cpVertStartOffset + cpVertMemReq.size, uniMemReq.alignment);
     VkMemoryAllocateInfo memAllocInfo = {
         VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
         nullptr,
@@ -454,6 +640,10 @@ void Renderer::ensureBuffers()
         qFatal("Failed to allocate memory: %d", err);
 
     err = m_devFuncs->vkBindBufferMemory(dev, m_objectVertexBuf, m_bufMem, 0);
+    if (err != VK_SUCCESS)
+        qFatal("Failed to bind vertex buffer memory: %d", err);
+
+    err = m_devFuncs->vkBindBufferMemory(dev, m_ControlPointVertexBuf, m_bufMem, cpVertStartOffset);
     if (err != VK_SUCCESS)
         qFatal("Failed to bind vertex buffer memory: %d", err);
 
@@ -470,6 +660,10 @@ void Renderer::ensureBuffers()
     float* vertexData = objects.getVertexData();
     memcpy(p, vertexData, meshByteCount);
     delete[] vertexData;
+
+    vertexData = objects.getVertexDataCP();
+    memcpy(p + cpVertStartOffset, vertexData, ControlPointMeshByteCount);  
+    delete[] vertexData; 
 
     m_devFuncs->vkUnmapMemory(dev, m_bufMem);
 
@@ -690,6 +884,21 @@ void Renderer::buildDrawCalls()
     m_devFuncs->vkCmdDraw(cb, objects.getVerticieCount(), 1, 0, 0);
 }
 
+void Renderer::buildDrawCallsControlPoints()
+{
+    VkCommandBuffer cb = m_window->currentCommandBuffer(); 
+
+    m_devFuncs->vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, m_controlPoint.pipeline); 
+
+    VkDeviceSize vbOffset = 0;
+    m_devFuncs->vkCmdBindVertexBuffers(cb, 0, 1, &m_ControlPointVertexBuf, &vbOffset);
+
+    QMatrix4x4 mvp = m_proj * cam.viewMatrix();
+    m_devFuncs->vkCmdPushConstants(cb, m_controlPoint.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, mvp.constData());
+
+    m_devFuncs->vkCmdDraw(cb, objects.getVerticieCountCP(), 1, 0, 0);
+}
+
 void Renderer::resetPipeline()
 {
     releaseResources();
@@ -752,6 +961,9 @@ void Renderer::startNextFrame()
    
     moveCam();
     buildDrawCalls();
+
+    if(ShowControlPoints)
+        buildDrawCallsControlPoints();
 
     m_devFuncs->vkCmdEndRenderPass(cmdBuf);
 
