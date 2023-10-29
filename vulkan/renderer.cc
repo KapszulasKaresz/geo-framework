@@ -494,6 +494,7 @@ void Renderer::releaseSwapChainResources() {
     m_window->frameReady();
 } 
 void Renderer::releaseResources() {
+    m_guiMutex.lock();
     qDebug("Renderer release");
     VkDevice dev = m_window->device();
 
@@ -578,6 +579,8 @@ void Renderer::releaseResources() {
 
     QVulkanInstance* inst = m_window->vulkanInstance();
     m_sphereTexture.reset(inst, dev);
+
+    m_guiMutex.unlock();
 }
 
 void Renderer::ensureBuffers()
@@ -619,7 +622,7 @@ void Renderer::ensureBuffers()
     m_devFuncs->vkGetBufferMemoryRequirements(dev, m_ControlPointVertexBuf, &cpVertMemReq);
 
     bufInfo.size = (m_material.fragUniSize + m_material.vertUniSize) * concurrentFrameCount;
-    bufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    bufInfo.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
     err = m_devFuncs->vkCreateBuffer(dev, &bufInfo, nullptr, &m_uniBuf);
     if (err != VK_SUCCESS)
         qFatal("Failed to create uniform buffer: %d", err);
@@ -675,7 +678,6 @@ void Renderer::ensureBuffers()
 
     VkDescriptorBufferInfo vertUni = { m_uniBuf, 0, m_material.vertUniSize };
     VkDescriptorBufferInfo fragUni = { m_uniBuf, m_material.vertUniSize, m_material.fragUniSize };
-    VkDescriptorBufferInfo textureBuf = { m_sphereTexture.stagingBuffer ,m_material.vertUniSize + m_material.fragUniSize , aligned(m_sphereTexture.imageSize, uniAlign)};
 
     VkDescriptorImageInfo imageInfo;
     memset(&imageInfo, 0, sizeof(imageInfo));
@@ -701,12 +703,11 @@ void Renderer::ensureBuffers()
 
     descWrite[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descWrite[2].dstSet = m_material.descSet;
-    descWrite[2].dstBinding = 1;
+    descWrite[2].dstBinding = 2;
     descWrite[2].dstArrayElement = 0;
     descWrite[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     descWrite[2].descriptorCount = 1;
     descWrite[2].pImageInfo = &imageInfo;
-    descWrite[2].pBufferInfo = &textureBuf;
 
 
     m_devFuncs->vkUpdateDescriptorSets(dev, 3, descWrite, 0, nullptr);
@@ -995,6 +996,8 @@ void Renderer::addObject(Object* _object)
     QVector3D bl = QVector3D(box_min.data()[0], box_min.data()[1], box_min.data()[2]);
     QVector3D tl = QVector3D(box_max.data()[0], box_max.data()[1], box_max.data()[2]);
     
+    objects.updateControlPoints(_object, (bl - tl).length());
+    
     cam.updateCameraBasedOnBoundingBox(bl, tl);
 
     lightPos = tl * 10;
@@ -1016,9 +1019,9 @@ void Renderer::setWireframe(bool _wireframe)
     }
     wireframe = _wireframe;
     m_inst = false;
+    m_guiMutex.unlock();
     resetPipeline();
     m_window->requestUpdate();
-    m_guiMutex.unlock();
 }
 
 void Renderer::setCamVelocity(const QVector3D& _vel)
@@ -1072,9 +1075,10 @@ void Renderer::setVisType(VisType visType)
         return;
     }
     m_visType = visType;
+    m_guiMutex.unlock();
     resetPipeline();
     m_window->requestUpdate();
-    m_guiMutex.unlock();
+    
 }
 
 void Renderer::swapOrthoView()

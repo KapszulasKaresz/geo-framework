@@ -7,15 +7,21 @@
 void ObjectStore::addObject(Object* object)
 {
 	objects.push_back(object);
+
+	updateMeanMinMax();
+}
+
+void ObjectStore::updateControlPoints(Object* object, float boundingBoxSize) {
+	this->boundingBoxSize = boundingBoxSize;
 	for (int i = 0; i < object->controlPoints(); i++) {
 		controlPoints.push_back(new Mesh("D:/Temalabor/models/cube.obj"));
 		Vector p = Vector(object->postSelection(i).data()[0], object->postSelection(i).data()[1], object->postSelection(i).data()[2]);
 		for (int j = 0; j < controlPoints[controlPoints.size() - 1]->baseMesh().n_vertices(); j++) {
 			Vector p2 = Vector(controlPoints[controlPoints.size() - 1]->postSelection(j).data()[0], controlPoints[controlPoints.size() - 1]->postSelection(j).data()[1], controlPoints[controlPoints.size() - 1]->postSelection(j).data()[2]);
-			controlPoints[controlPoints.size() - 1]->movement(j, p + p2);
+			p2 *= 1 / (boundingBoxSize * 3);
+			controlPoints[controlPoints.size() - 1]->movement(j, p + p2 - Vector(1 / (boundingBoxSize * 6), 1 / (boundingBoxSize * 6), 1 / (boundingBoxSize * 6)));
 		}
 	}
-	updateMeanMinMax();
 }
 
 int ObjectStore::getVerticieCount()
@@ -36,13 +42,17 @@ int ObjectStore::getVerticieCountCP()
 		ret += point->getVerticieCount();
 	}
 	
+	if (ret == 0) {
+		return 1;
+	}
+
 	return ret;
 }
 
 float* ObjectStore::getVertexDataCP()
 {
 
-	float* ret = new float[getVerticieCount() * 3];
+	float* ret = new float[getVerticieCountCP() * 3];
 	int i = 0;
 
 	for (int k = 0; k < controlPoints.size(); k++) {
@@ -54,6 +64,7 @@ float* ObjectStore::getVertexDataCP()
 		}
 		delete copy;
 	}
+
 
 	return ret;
 }
@@ -152,7 +163,8 @@ void ObjectStore::updatePoints()
 			Vector p = Vector(object->postSelection(i).data()[0], object->postSelection(i).data()[1], object->postSelection(i).data()[2]);
 			for (int j = 0; j < controlPoints[controlPoints.size() - 1]->baseMesh().n_vertices(); j++) {
 				Vector p2 = Vector(controlPoints[controlPoints.size() - 1]->postSelection(j).data()[0], controlPoints[controlPoints.size() - 1]->postSelection(j).data()[1], controlPoints[controlPoints.size() - 1]->postSelection(j).data()[2]);
-				controlPoints[controlPoints.size() - 1]->movement(j, p + p2);
+				p2 *= 1 / (boundingBoxSize * 3);
+				controlPoints[controlPoints.size() - 1]->movement(j, p + p2 - Vector(1 / (boundingBoxSize * 6), 1 / (boundingBoxSize * 6), 1 / (boundingBoxSize * 6)));
 			}
 		}
 	}

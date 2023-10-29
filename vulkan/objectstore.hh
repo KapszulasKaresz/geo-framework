@@ -8,7 +8,6 @@ class ObjectStore {
 	std::vector<Object*> objects;
 	std::vector<Mesh*> controlPoints;
 
-	Mesh* ControlPoint = new Mesh("D:/Temalabor/models/cube.obj");
 
 	float meanMin;
 	float meanMax;
@@ -17,6 +16,8 @@ class ObjectStore {
 	int selectedObjectID = -1;
 	int selectedVertexID = -1;
 
+	float boundingBoxSize = 0.0f;
+
 	QVector3D movementAxis = QVector3D(1, 0, 0);
 
 public:
@@ -24,6 +25,7 @@ public:
 	void addObject(Object* object);
 	void clear() { objects.clear(); controlPoints.clear(); }
 	int getVerticieCount();
+	void updateControlPoints(Object* object, float boundingBoxSize);
 	int getVerticieCountCP();
 	float* getVertexDataCP();
 	float* getVertexData();

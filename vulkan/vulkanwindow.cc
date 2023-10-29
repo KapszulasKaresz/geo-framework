@@ -163,7 +163,7 @@ void VulkanWindow::mousePressEvent(QMouseEvent* e)
     if (!m_ispressed && (e->modifiers() & Qt::ControlModifier)) {
         QVector3D from = renderer->cam.getPos();
         QVector3D dir = renderer->cam.getRayDir(e->pos().x(), e->pos().y(), this->size());
-        renderer->objects.updateSelected(from, dir);
+        renderer->objects.updateSelected(from, dir.normalized());
     }
     m_ispressed = true;
 }
