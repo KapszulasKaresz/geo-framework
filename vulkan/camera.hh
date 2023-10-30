@@ -3,13 +3,14 @@
 #include <qmatrix4x4.h>
 
 class Camera {
-	QVector3D forward, right, up, pos, bounding_bl, bounding_tr;
+	QVector3D forward, right, up, pos;
 	float m_yaw;
 	float m_pitch;
 	float scale = 1.0f;
 	QMatrix4x4 yawMatrix, pitchMatrix;
 
 public:
+	QVector3D bounding_bl, bounding_tr;
 	Camera(const QVector3D& pos) : forward(0.0f, 0.0f, -1.0f),
 		right(1.0f, 0.0f, 0.0f),
 		up(0.0f, 1.0f, 0.0f),

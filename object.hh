@@ -18,7 +18,7 @@ public:
   virtual void updateBaseMesh();
   virtual bool reload() = 0;
   virtual int controlPoints();
-  virtual void getClosest(int& id, float& distance, QVector3D from, QVector3D dir) = 0;
+  virtual void getClosest(int& id, float& distance, QVector3D from, QVector3D dir, QMatrix4x4 model) = 0;
   bool valid() const;
 protected:
   void updateBaseMesh(bool own_normal, bool own_mean);

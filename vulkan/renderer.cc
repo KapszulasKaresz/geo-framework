@@ -776,13 +776,15 @@ void Renderer::ensureInstanceBuffer()
 void Renderer::getMatrices(QMatrix4x4* vp, QMatrix4x4* model, QMatrix3x3* modelNormal, QVector3D* eyePos)
 {
     model->setToIdentity();
-    model->rotate(m_rotation_x, 1, 0, 1);
-    model->rotate(m_rotation_y, 1, 1, 0);
+    model->rotate(m_rotation_x, 0,1,0);
+    model->rotate(m_rotation_y, -cam.getPos());
     *modelNormal = model->normalMatrix();
     QMatrix4x4 view = cam.viewMatrix();
     *vp = m_proj * view;
 
     *eyePos = view.inverted().column(3).toVector3D();
+
+    objects.model = *model;
 }
 
 void Renderer::writeFragUni(quint8* p, const QVector3D& eyePos)
@@ -900,8 +902,14 @@ void Renderer::buildDrawCallsControlPoints()
 
     VkDeviceSize vbOffset = 0;
     m_devFuncs->vkCmdBindVertexBuffers(cb, 0, 1, &m_ControlPointVertexBuf, &vbOffset);
+    
+    QMatrix4x4 vp, model;
+    QMatrix3x3 modelNormal; 
+    QVector3D eyePos; 
+    getMatrices(&vp, &model, &modelNormal, &eyePos); 
 
-    QMatrix4x4 mvp = m_proj * cam.viewMatrix();
+
+    QMatrix4x4 mvp = m_proj * cam.viewMatrix() * model;
     m_devFuncs->vkCmdPushConstants(cb, m_controlPoint.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, mvp.constData());
 
     m_devFuncs->vkCmdDraw(cb, objects.getVerticieCountCP(), 1, 0, 0);
@@ -1053,8 +1061,8 @@ void Renderer::rotateCam(int dx, int dy)
 
 void Renderer::rotateObject(int dx, int dy)
 {
-    m_rotation_x += dx / 8.0f;
-    m_rotation_y += dy / 8.0f;
+    m_rotation_x += dx / 4.0f;
+    m_rotation_y += dy / 4.0f;
     markViewProjDirty();
     m_window->requestUpdate();
 }

@@ -1,6 +1,7 @@
 #include <fstream>
 
 #include "bezier.hh"
+#include "qmatrix4x4.h"
 
 Bezier::Bezier(std::string filename) : Object(filename) {
   reload();
@@ -49,7 +50,7 @@ void Bezier::drawWithNames(const Visualization &vis) const {
   }
 }
 
-void Bezier::getClosest(int& id, float& distance, QVector3D from, QVector3D dir)
+void Bezier::getClosest(int& id, float& distance, QVector3D from, QVector3D dir, QMatrix4x4 model)
 {
     float minDist = std::numeric_limits<float>::max();
     int idx = -1;
@@ -58,6 +59,7 @@ void Bezier::getClosest(int& id, float& distance, QVector3D from, QVector3D dir)
 
     for (auto v : control_points) {
         QVector3D point = QVector3D(v.data()[0], v.data()[1], v.data()[2]);
+        point =model* point;
         float dist = point.distanceToLine(from, dir);
         if (dist < minDist) {
             minDist = dist;

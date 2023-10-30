@@ -2,10 +2,12 @@
 #include "qvector.h"
 #include "qdebug.h"
 #include "qline.h"
+#include "qmatrix4x4.h"
 #include "qpoint.h"
 
 void ObjectStore::addObject(Object* object)
 {
+
 	objects.push_back(object);
 
 	updateMeanMinMax();
@@ -121,7 +123,7 @@ void ObjectStore::updateSelected(QVector3D from, QVector3D dir)
 	for (int i = 0; i < objects.size(); i++) {
 		float distance;
 		int id;
-		objects[i]->getClosest(id, distance, from, dir);
+		objects[i]->getClosest(id, distance, from, dir, model);
 		if (distance < minDist) {
 			minDist = distance;
 			selectedObjectID = i;

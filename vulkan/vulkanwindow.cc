@@ -152,7 +152,7 @@ void VulkanWindow::mouseMoveEvent(QMouseEvent* e)
     int dx = e->position().toPoint().x() - m_lastpos.x();
     int dy = e->position().toPoint().y() - m_lastpos.y();
 
-    renderer->rotateCam(dx, dy);
+    renderer->rotateObject(dx, dy);
 
     m_lastpos = e->position().toPoint();
 }

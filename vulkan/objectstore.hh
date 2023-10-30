@@ -2,6 +2,7 @@
 #include "object.hh"
 #include "mesh.hh"
 #include "qvector3d.h"
+#include "qmatrix4x4.h"
 
 
 class ObjectStore {
@@ -21,6 +22,8 @@ class ObjectStore {
 	QVector3D movementAxis = QVector3D(1, 0, 0);
 
 public:
+	QMatrix4x4 model;
+
 	std::vector<Object*>& getObjects() { return objects; }
 	void addObject(Object* object);
 	void clear() { objects.clear(); controlPoints.clear(); }

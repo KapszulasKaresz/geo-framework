@@ -1,6 +1,7 @@
 #include <OpenMesh/Core/IO/MeshIO.hh>
 
 #include "mesh.hh"
+#include "qmatrix4x4.h"
 
 Mesh::Mesh(std::string filename) : Object(filename) {
   reload();
@@ -29,13 +30,14 @@ void Mesh::movement(int selected, const Vector &pos) {
 
 
 
-void Mesh::getClosest(int& id, float& distance, QVector3D from, QVector3D dir)
+void Mesh::getClosest(int& id, float& distance, QVector3D from, QVector3D dir, QMatrix4x4 model)
 {
     float minDist = std::numeric_limits<float>::max();
     int idx = -1;
 
     for (auto v : mesh.vertices()) { 
         QVector3D point = QVector3D(mesh.point(v).data()[0], mesh.point(v).data()[1], mesh.point(v).data()[2]); 
+        point = model* point;
         float dist = point.distanceToLine(from, dir);  
         if (dist < minDist) { 
             minDist = dist; 
