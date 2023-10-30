@@ -95,6 +95,7 @@ void Renderer::initResources() {
 
     createObjectPipeline();
     createControlPointPipeline();
+    preventNextFrame = false;
 }
 
 void Renderer::createObjectPipeline()
@@ -491,10 +492,10 @@ void Renderer::initSwapChainResources() {
     markViewProjDirty();
 } 
 void Renderer::releaseSwapChainResources() {
-    m_window->frameReady();
 } 
 void Renderer::releaseResources() {
     m_guiMutex.lock();
+    preventNextFrame = true;
     qDebug("Renderer release");
     VkDevice dev = m_window->device();
 
@@ -556,6 +557,11 @@ void Renderer::releaseResources() {
         m_objectVertexBuf = VK_NULL_HANDLE;
     }
 
+    if(m_ControlPointVertexBuf) {
+        m_devFuncs->vkDestroyBuffer(dev, m_ControlPointVertexBuf, nullptr);
+        m_ControlPointVertexBuf = VK_NULL_HANDLE;
+    }
+
     if (m_uniBuf) {
         m_devFuncs->vkDestroyBuffer(dev, m_uniBuf, nullptr);
         m_uniBuf = VK_NULL_HANDLE;
@@ -575,6 +581,7 @@ void Renderer::releaseResources() {
         m_devFuncs->vkFreeMemory(dev, m_instBufMem, nullptr);
         m_instBufMem = VK_NULL_HANDLE;
     }
+
 
 
     QVulkanInstance* inst = m_window->vulkanInstance();
@@ -918,6 +925,10 @@ void Renderer::moveCam()
 
 void Renderer::startNextFrame() 
 {
+    if (preventNextFrame) {
+        return;
+    }
+
     m_guiMutex.lock();
 
     ensureBuffers();

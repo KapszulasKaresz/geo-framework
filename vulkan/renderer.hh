@@ -84,6 +84,8 @@ private:
     float m_rotation_x = 0.0f;
     float m_rotation_y = 0.0f;
 
+    bool preventNextFrame = true;
+
     VkBuffer m_objectVertexBuf = VK_NULL_HANDLE;
 
     struct {

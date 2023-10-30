@@ -94,7 +94,7 @@ static void bernstein(size_t n, double u, std::vector<double> &coeff) {
 }
 
 void Bezier::updateBaseMesh() {
-  size_t resolution = 50;
+  size_t resolution = 15;
 
   mesh.clear();
   std::vector<BaseMesh::VertexHandle> handles, tri;

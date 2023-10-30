@@ -8,7 +8,6 @@
 
 class VulkanWindow : public QVulkanWindow
 {
-    Q_OBJECT
 public:
     VulkanWindow();
     QVulkanWindowRenderer* createRenderer() override;
@@ -26,11 +25,6 @@ public:
     void setSlicingScaling(double scaling) { renderer->setSlicingScaling(scaling); }
     void deleteObjects() { renderer->deleteObjects(); }
     bool open(std::string filename);
-
-signals:
-    void startComputation(QString message);
-    void midComputation(int percent);
-    void endComputation();
 
 private: 
     virtual void keyPressEvent(QKeyEvent* e) override;

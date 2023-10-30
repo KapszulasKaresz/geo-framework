@@ -4,8 +4,8 @@
 
 #include "window.hh"
 
-Window::Window(QApplication *parent) :
-  QMainWindow(), parent(parent), last_directory(".")
+Window::Window(QApplication *parent, VulkanWindow* window) :
+  QMainWindow(), parent(parent), last_directory("."), viewer(window)
 {
   setWindowTitle(tr("Geometry Framework"));
   setStatusBar(new QStatusBar);
@@ -14,19 +14,10 @@ Window::Window(QApplication *parent) :
   progress->hide();
   statusBar()->addPermanentWidget(progress);
 
-  inst.setLayers({ "VK_LAYER_KHRONOS_validation" });
-  if (!inst.create())
-      qFatal("Failed to create Vulkan instance: %d", inst.errorCode());
-
-  viewer = new VulkanWindow();
-  viewer->setVulkanInstance(&inst);
+  
  
-  auto wrapper = QWidget::createWindowContainer(viewer, this);
+  auto wrapper = QWidget::createWindowContainer(viewer);
 
-
-  connect(viewer, &VulkanWindow::startComputation, this, &Window::startComputation);
-  connect(viewer, &VulkanWindow::midComputation, this, &Window::midComputation);
-  connect(viewer, &VulkanWindow::endComputation, this, &Window::endComputation);
   setCentralWidget(wrapper);
 
   auto openAction = new QAction(tr("&Open"), this);
@@ -65,8 +56,6 @@ Window::Window(QApplication *parent) :
   visMenu->addAction(cutoffAction);
   visMenu->addAction(rangeAction);
   visMenu->addAction(slicingAction);
-
-  this->resize(1280, 720);
 }
 
 void Window::open(bool clear_others) {
@@ -220,4 +209,9 @@ void Window::midComputation(int percent) {
 void Window::endComputation() {
   progress->hide();
   statusBar()->clearMessage();
+}
+
+void Window::closeEvent(QCloseEvent* event)
+{
+    QMainWindow::closeEvent(event);
 }
