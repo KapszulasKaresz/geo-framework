@@ -68,7 +68,7 @@ void Camera::updateCameraBasedOnBoundingBox(const QVector3D& bottomrleft, const 
     scale = (bottomrleft - topright).length();
 
     pos = (bottomrleft + topright) / 2;
-    pos.setZ(topright.z() + 2* topright.z());
+    pos.setZ(topright.z() + 3* topright.z());
 
     m_yaw = 0;
     m_pitch = 0;
@@ -79,7 +79,7 @@ void Camera::updateCameraBasedOnBoundingBox(const QVector3D& bottomrleft, const 
 void Camera::standardX()
 {
     pos = (bounding_bl + bounding_tr) / 2;
-    pos.setZ(bounding_tr.z() + 2 * bounding_tr.z());
+    pos.setZ(bounding_tr.z() + 3 * bounding_tr.z());
 
     m_yaw = 0;
     m_pitch = 0;
@@ -90,7 +90,7 @@ void Camera::standardX()
 void Camera::standardY()
 {
     pos = (bounding_bl + bounding_tr) / 2;
-    pos.setY(bounding_tr.y() + 2 * bounding_tr.y());
+    pos.setY(bounding_tr.y() + 3 * bounding_tr.y());
 
     m_yaw = 0;
     m_pitch = 0;
@@ -101,7 +101,7 @@ void Camera::standardY()
 void Camera::standardZ()
 {
     pos = (bounding_bl + bounding_tr) / 2;
-    pos.setX(bounding_tr.x() + 2 * bounding_tr.x());
+    pos.setX(bounding_tr.x() + 3 * bounding_tr.x());
 
     m_yaw = 0;
     m_pitch = 0;

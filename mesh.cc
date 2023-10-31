@@ -55,3 +55,8 @@ bool Mesh::reload() {
   updateBaseMesh();
   return true;
 }
+
+int Mesh::pointstoUpdate()
+{
+    return mesh.n_vertices();
+}

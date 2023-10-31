@@ -13,6 +13,7 @@ public:
   virtual void movement(int selected, const Vector &pos) override;
   virtual void updateBaseMesh() override;
   virtual int controlPoints() override { return control_points.size(); }
+  virtual int pointstoUpdate() override { return controlPoints(); }
   virtual bool reload() override;
 private:
   size_t degree[2];

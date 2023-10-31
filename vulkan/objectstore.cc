@@ -10,6 +10,21 @@ void ObjectStore::addObject(Object* object)
 
 	objects.push_back(object);
 
+	double large = std::numeric_limits<double>::max();
+	Vector box_min(large, large, large), box_max(-large, -large, -large);
+	const auto& mesh = object->baseMesh();
+	for (auto v : object->baseMesh().vertices()) {
+		box_min.minimize(mesh.point(v));
+		box_max.maximize(mesh.point(v));
+	}
+
+	Vector move = -(box_max + box_min) / 2;
+
+	for (int i = 0; i < object->pointstoUpdate(); i++) {
+		Vector p = object->postSelection(i);
+		object->movement(i, p + move);
+	}
+
 	updateMeanMinMax();
 }
 

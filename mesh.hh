@@ -11,4 +11,5 @@ public:
   virtual void movement(int selected, const Vector &pos) override;
   virtual void getClosest(int& id, float& distance, QVector3D from, QVector3D dir, QMatrix4x4 model) override;
   virtual bool reload() override;
+  virtual int pointstoUpdate() override;
 };
