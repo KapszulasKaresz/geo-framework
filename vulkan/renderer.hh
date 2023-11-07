@@ -9,7 +9,6 @@
 #include "texture.hh"
 #include "objectstore.hh"
 
-
 class Renderer : public QVulkanWindowRenderer {
 public:
     Renderer(QVulkanWindow* w, bool _wireframe);
@@ -60,6 +59,8 @@ private:
     void resetPipeline();
     void markViewProjDirty() { m_vpDirty = m_window->concurrentFrameCount(); }
     void moveCam();
+
+    QString BASE_PATH = "D:/Temalabor/geo-framework";
 
 
     bool ShowControlPoints = false;

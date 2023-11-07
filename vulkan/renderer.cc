@@ -39,47 +39,47 @@ void Renderer::initResources() {
     m_sphereTexture.m_window = m_window;
 
     if (!m_controlPoint.vs.isValid()) {
-        m_controlPoint.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/controlPoint_vert.spv"));
+        m_controlPoint.vs.load(inst, dev, QString(BASE_PATH + "/shaders/controlPoint_vert.spv"));
     }
 
     if (!m_controlPoint.fs.isValid()) {
-        m_controlPoint.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/controlPoint_frag.spv"));
+        m_controlPoint.fs.load(inst, dev, QString(BASE_PATH + "/shaders/controlPoint_frag.spv"));
     }
 
     if (!m_controlPointLine.vs.isValid()) {
-        m_controlPointLine.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/controlPoint_vert.spv"));
+        m_controlPointLine.vs.load(inst, dev, QString(BASE_PATH + "/shaders/controlPoint_vert.spv"));
     }
 
     if (!m_controlPointLine.fs.isValid()) {
-        m_controlPointLine.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/controlPointLine_frag.spv"));
+        m_controlPointLine.fs.load(inst, dev, QString(BASE_PATH + "/shaders/controlPointLine_frag.spv"));
     }
 
 
     if (!m_material.vs.isValid()) {
-        m_material.vs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/test_vert.spv"));
+        m_material.vs.load(inst, dev, QString(BASE_PATH + "/shaders/test_vert.spv"));
     }
 
     switch (m_visType)
     {
     case VisType::PLAIN:
         if (!m_material.fs.isValid()) {
-            m_material.fs.load(inst, dev, wireframe ? QString("D:/Temalabor/geo-framework/shaders/wireframe_frag.spv") : QString("D:/Temalabor/geo-framework/shaders/test_frag.spv"));
+            m_material.fs.load(inst, dev, wireframe ? QString(BASE_PATH + "/shaders/wireframe_frag.spv") : QString(BASE_PATH + "/shaders/test_frag.spv"));
         }
         m_sphereTexture.load(inst, dev, "environment.png");
         break;
     case VisType::MEAN:
         if (!m_material.fs.isValid()) {
-            m_material.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/mean_frag.spv"));
+            m_material.fs.load(inst, dev, QString(BASE_PATH + "/shaders/mean_frag.spv"));
         }
         break;
     case VisType::SLICING:
         if (!m_material.fs.isValid()) {
-            m_material.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/slicing_frag.spv"));
+            m_material.fs.load(inst, dev, QString(BASE_PATH + "/shaders/slicing_frag.spv"));
         }
         break;
     case VisType::ISOPHOTES:
         if (!m_material.fs.isValid()) {
-            m_material.fs.load(inst, dev, QString("D:/Temalabor/geo-framework/shaders/isophotes_frag.spv"));
+            m_material.fs.load(inst, dev, QString(BASE_PATH + "/shaders/isophotes_frag.spv"));
         }
         if (isEnvironment) {
             m_sphereTexture.load(inst, dev, "environment.png");
