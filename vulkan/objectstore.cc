@@ -66,6 +66,18 @@ int ObjectStore::getVerticieCountCP()
 	return ret;
 }
 
+
+int ObjectStore::getVerticieCountCPLine() {
+	int ret = 0; 
+
+	return controlPoints.size();
+	
+	if (ret == 0)
+		return 1;
+
+	return ret;
+}
+
 float* ObjectStore::getVertexDataCP()
 {
 
@@ -79,6 +91,22 @@ float* ObjectStore::getVertexDataCP()
 			ret[i++] = copy[j + 1];
 			ret[i++] = copy[j + 2];
 		}
+		delete copy;
+	}
+
+
+	return ret;
+}
+
+float* ObjectStore::getVertexDataCPLine() {
+	float* ret = new float[getVerticieCountCPLine() * 3];
+	int i = 0;
+
+	for (int k = 0; k < controlPoints.size(); k++) {
+		float* copy = controlPoints[k]->getVertexData(meanMin, meanMax);
+		ret[i++] = copy[0];
+		ret[i++] = copy[1];
+		ret[i++] = copy[2];
 		delete copy;
 	}
 

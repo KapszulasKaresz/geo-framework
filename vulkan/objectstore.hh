@@ -30,7 +30,9 @@ public:
 	int getVerticieCount();
 	void updateControlPoints(Object* object, float boundingBoxSize);
 	int getVerticieCountCP();
+	int getVerticieCountCPLine();
 	float* getVertexDataCP();
+	float* getVertexDataCPLine();
 	float* getVertexData();
 	void updateMeanMinMax();
 	void updateMesh();

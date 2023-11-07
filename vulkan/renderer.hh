@@ -49,12 +49,14 @@ private:
 
     void createObjectPipeline();
     void createControlPointPipeline();
+    void createControlPointLinePipeline();
     void ensureBuffers();
     void ensureInstanceBuffer();
     void getMatrices(QMatrix4x4* vp, QMatrix4x4* model, QMatrix3x3* modelNormal, QVector3D* eyePos);
     void writeFragUni(quint8* p, const QVector3D& eyePos);
     void buildDrawCalls();
     void buildDrawCallsControlPoints();
+    void buildDrawCallsControlPointsLine();
     void resetPipeline();
     void markViewProjDirty() { m_vpDirty = m_window->concurrentFrameCount(); }
     void moveCam();
@@ -109,6 +111,15 @@ private:
         VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
         VkPipeline pipeline = VK_NULL_HANDLE;
     } m_controlPoint;
+
+    VkBuffer m_ControlPointLineVertexBuf = VK_NULL_HANDLE;
+
+    struct {
+        Shader vs;
+        Shader fs;
+        VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+        VkPipeline pipeline = VK_NULL_HANDLE;
+    } m_controlPointLine;
 
     VkPipelineCache m_pipelineCache = VK_NULL_HANDLE;
     
