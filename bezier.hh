@@ -15,6 +15,7 @@ public:
   virtual int controlPoints() override { return control_points.size(); }
   virtual int pointstoUpdate() override { return controlPoints(); }
   virtual bool reload() override;
+  virtual size_t* getDegree() override { return degree; }
 private:
   size_t degree[2];
   std::vector<Vector> control_points;

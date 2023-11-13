@@ -19,6 +19,7 @@ public:
   virtual bool reload() = 0;
   virtual int controlPoints();
   virtual int pointstoUpdate() = 0;
+  virtual size_t* getDegree() { return NULL; }
   virtual void getClosest(int& id, float& distance, QVector3D from, QVector3D dir, QMatrix4x4 model) = 0;
   bool valid() const;
 protected:

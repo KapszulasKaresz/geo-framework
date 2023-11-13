@@ -551,7 +551,7 @@ void Renderer::createControlPointLinePipeline()
     VkPipelineInputAssemblyStateCreateInfo ia;
     memset(&ia, 0, sizeof(ia));
     ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    ia.topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
     pipelineInfo.pInputAssemblyState = &ia;
 
     VkPipelineViewportStateCreateInfo vp;

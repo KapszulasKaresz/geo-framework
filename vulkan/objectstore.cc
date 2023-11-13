@@ -70,7 +70,12 @@ int ObjectStore::getVerticieCountCP()
 int ObjectStore::getVerticieCountCPLine() {
 	int ret = 0; 
 
-	return controlPoints.size();
+	for (auto object : objects) {
+		if (object->controlPoints() > 0) {
+			size_t* degree = object->getDegree();
+			ret += degree[0] * degree[1] * 4;
+		}
+	}
 	
 	if (ret == 0)
 		return 1;
@@ -100,15 +105,25 @@ float* ObjectStore::getVertexDataCP()
 
 float* ObjectStore::getVertexDataCPLine() {
 	float* ret = new float[getVerticieCountCPLine() * 3];
-	int i = 0;
+	int l = 0;
 
-	for (int k = 0; k < controlPoints.size(); k++) {
-		float* copy = controlPoints[k]->getVertexData(meanMin, meanMax);
-		ret[i++] = copy[0];
-		ret[i++] = copy[1];
-		ret[i++] = copy[2];
-		delete copy;
+	for (auto object : objects) {
+		if (object->controlPoints() > 0) {
+			size_t* degree = object->getDegree();
+			size_t m = degree[1] + 1;
+			for (size_t k = 0; k < 2; ++k)
+				for (size_t i = 0; i <= degree[k]; ++i) {
+					for (size_t j = 0; j <= degree[1 - k]; ++j) {
+						size_t const index = k ? j * m + i : i * m + j;
+						const auto& p = object->postSelection(index);
+						ret[l++] = p.data()[0];
+						ret[l++] = p.data()[1];
+						ret[l++] = p.data()[2];
+					}
+				}
+		}
 	}
+
 
 
 	return ret;
