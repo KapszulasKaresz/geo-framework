@@ -567,7 +567,7 @@ void Renderer::createControlPointLinePipeline()
     rs.polygonMode = VK_POLYGON_MODE_LINE;
     rs.cullMode = VK_CULL_MODE_NONE;
     rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    rs.lineWidth = 1.0f;
+    rs.lineWidth = 2.0f;
     pipelineInfo.pRasterizationState = &rs;
 
     VkPipelineMultisampleStateCreateInfo ms;
@@ -1359,6 +1359,13 @@ void Renderer::update()
     m_devFuncs->vkDestroyBuffer(m_window->device(), m_objectVertexBuf, nullptr);
     m_objectVertexBuf = VK_NULL_HANDLE;
     m_window->requestUpdate();
+    m_guiMutex.unlock();
+}
+
+void Renderer::finish()
+{
+    m_guiMutex.lock();
+    preventNextFrame = true;
     m_guiMutex.unlock();
 }
 

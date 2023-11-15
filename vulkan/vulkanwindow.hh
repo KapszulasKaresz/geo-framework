@@ -25,6 +25,7 @@ public:
     void setSlicingScaling(double scaling) { renderer->setSlicingScaling(scaling); }
     void deleteObjects() { renderer->deleteObjects(); }
     bool open(std::string filename);
+    void finishRenderer() { renderer->finish(); }
 
 private: 
     virtual void keyPressEvent(QKeyEvent* e) override;

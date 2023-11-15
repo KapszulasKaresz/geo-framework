@@ -213,5 +213,6 @@ void Window::endComputation() {
 
 void Window::closeEvent(QCloseEvent* event)
 {
+    viewer->finishRenderer();
     QMainWindow::closeEvent(event);
 }

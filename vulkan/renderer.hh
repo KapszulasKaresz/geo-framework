@@ -39,6 +39,7 @@ public:
     void deleteObjects() { objects.clear(); }
     void update();
     void swapControlPointsShow() { ShowControlPoints = !ShowControlPoints; }
+    void finish();
 
     ~Renderer();
 
