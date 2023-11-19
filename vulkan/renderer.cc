@@ -1282,6 +1282,7 @@ void Renderer::rotateObject(int dx, int dy)
 {
     m_rotation_x += dx / 4.0f;
     m_rotation_y += dy / 4.0f;
+
     markViewProjDirty();
     m_window->requestUpdate();
 }

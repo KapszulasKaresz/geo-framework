@@ -38,7 +38,7 @@ void Texture::load(QVulkanInstance* inst, VkDevice dev, const char* filename)
 	memset(&allocInfo, 0, sizeof(allocInfo));
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO; 
 	allocInfo.allocationSize = memRequirements.size; 
-	allocInfo.memoryTypeIndex = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	allocInfo.memoryTypeIndex = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	err = inst->deviceFunctions(dev)->vkAllocateMemory(dev, &allocInfo, nullptr, &stagingBufferMemory);
 	if (err != VK_SUCCESS)
 		qFatal("Failed to allocate Stagin buffer memory: %d", err);
@@ -81,7 +81,7 @@ void Texture::load(QVulkanInstance* inst, VkDevice dev, const char* filename)
 	memset(&allocInfo, 0, sizeof(allocInfo));
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO; 
 	allocInfo.allocationSize = memRequirements.size; 
-	allocInfo.memoryTypeIndex = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	allocInfo.memoryTypeIndex = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
 	err = inst->deviceFunctions(dev)->vkAllocateMemory(dev, &allocInfo, nullptr, &textureImageMemory);
 	if (err != VK_SUCCESS)
