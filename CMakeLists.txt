@@ -50,6 +50,8 @@ include_directories(
   ${QGLVIEWER_INCLUDE_DIR}
   )
 
+add_subdirectory(vulkan)
+
 add_executable(geo-framework WIN32
   ${geo_HEADERS_MOC}
   textures.qrc
@@ -83,4 +85,5 @@ target_link_libraries(geo-framework PUBLIC
   Qt6::Widgets
   Qt6::Xml
   ${QGLVIEWER_LIBRARY}
+  renderer
   )
